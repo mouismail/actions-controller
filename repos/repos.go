@@ -13,7 +13,7 @@ type ActionConfig struct {
 	Repos        []string `yaml:"repos,omitempty"`
 }
 
-// load yaml file from path
+// LoadConfig load yaml file from path
 // unmarshal into Config struct
 // return Config struct
 func LoadConfig(path string) (config ActionConfig, err error) {

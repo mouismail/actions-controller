@@ -33,3 +33,45 @@
 ### Where can this GitHub App be installed?
 
 - **Any account** Allow this GitHub App to be installed by any user or organization.
+
+## Prerequisites
+
+- Go version 1.16 or later
+- Docker version 20.10 or later
+- Git version 2.30 or later
+
+## Usage
+
+### Run locally
+
+The app will listen on port 3000 by default. You can change it by setting the `HTTP_PORT` environment variable.
+
+To test the app, open a browser and visit http://localhost:3000.
+
+```bash
+$ make dev
+```
+
+### Run in Docker
+
+To build the app binary with Docker and `ldflags`, use the docker build command with a tag name for your image and some arguments for ldflags:
+
+```bash
+$ make build
+```
+
+This will create a Docker image named `actions-controller:latest` with some arguments for ldflags.
+
+To run the app in a container, use the docker run command with the tag name you used to build the image:
+
+```bash
+$ make start
+```
+
+The app will listen on port 3000 inside the container and map it to port 3000 on your host machine.
+
+To test the app, open a browser and visit http://localhost:3000.
+
+To see the app version information, visit http://localhost:3000/version.
+
+

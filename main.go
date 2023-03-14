@@ -1,22 +1,28 @@
 package main
 
 import (
-	"io"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
+
+	"github.tools.sap/actions-rollout-app/utils"
 )
 
 func main() {
-	// Set routing rules
-	http.HandleFunc("/", Tmp)
+	r := mux.NewRouter()
+	r.HandleFunc("/version", utils.VersionHandler)
 
-	//Use the default DefaultServeMux.
-	err := http.ListenAndServe(":3000", nil)
-	if err != nil {
-		log.Fatal(err)
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "3000"
 	}
-}
 
-func Tmp(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "version 1")
+	log.Println("Starting server on port", httpPort)
+
+	err := http.ListenAndServe(":"+httpPort, r)
+
+	if err != nil {
+		log.Fatalf("error occured during starting the app %s", err)
+	}
 }
