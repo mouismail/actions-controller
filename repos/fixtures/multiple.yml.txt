@@ -1,0 +1,8 @@
+url: https://github.example.com/octo
+contactEmail: octodemo@example.com
+useCase: 'octodemo'
+repos:
+  - https://github.tools.sap/octo/demo1
+  - https://github.tools.sap/octo/demo2
+  - https://github.tools.sap/octo/demo3
+  - https://github.tools.sap/octo/demo4
