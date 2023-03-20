@@ -2,19 +2,18 @@ package main
 
 import (
 	"github.com/gorilla/mux"
+	"github.tools.sap/actions-rollout-app/pkg/routes"
 	"log"
 	"net/http"
 	"os"
-
-	"github.tools.sap/actions-rollout-app/utils"
 )
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/version", utils.VersionHandler)
-	r.HandleFunc("/health", utils.HealthHandler)
-	r.HandleFunc("/webhook", utils.WebhookHandler)
-	r.HandleFunc("/ping", utils.HealthHandler)
+	r.HandleFunc("/version", routes.VersionHandler)
+	r.HandleFunc("/health", routes.HealthHandler)
+	r.HandleFunc("/webhook", routes.WebhookHandler)
+	r.HandleFunc("/ping", routes.HealthHandler)
 
 	httpPort := os.Getenv("HTTP_PORT")
 	if httpPort == "" {

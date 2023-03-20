@@ -7,16 +7,21 @@ COMMIT_ID = $(shell git rev-parse HEAD)
 HTTP_PORT = 3000
 
 # Targets
-.PHONY: dev build start
+.PHONY: test dev build start
+
+test:
+	go test -v ./...
 
 dev:
 	go run main.go
 
 build:
-	docker build -t  actions-control:latest . \
+	go test -v ./...
+	if [ $$? -ne 0 ]; then exit 1; fi
+	docker build -t actions-control:latest . \
 	--build-arg VERSION=$(VERSION) \
 	--build-arg BUILD_TIME=$(BUILD_TIME) \
-	--build-arg COMMIT_ID=$(COMMIT_ID)
+	--build-arg COMMIT_ID=$(COMMIT_ID) \
 	--build-arg HTTP_PORT=$(HTTP_PORT)
 
 start:

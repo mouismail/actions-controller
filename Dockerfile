@@ -1,5 +1,5 @@
-# Use golang:1.16-alpine as builder image
-FROM golang:1.16-alpine AS builder
+# Use golang:1.19-alpine as builder image
+FROM golang:1.19-alpine AS builder
 
 # Set working directory inside the container
 WORKDIR /

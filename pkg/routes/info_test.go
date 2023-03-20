@@ -1,4 +1,4 @@
-package utils
+package routes
 
 import (
 	"net/http"
