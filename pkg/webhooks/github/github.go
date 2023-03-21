@@ -13,8 +13,10 @@ import (
 )
 
 var listenEvents = []ghwebhooks.Event{
-	ghwebhooks.PullRequestEvent,
 	ghwebhooks.IssuesEvent,
+	ghwebhooks.WorkflowDispatchEvent,
+	ghwebhooks.WorkflowRunEvent,
+	ghwebhooks.WorkflowRunEvent,
 }
 
 type Webhook struct {
@@ -49,6 +51,7 @@ func NewGithubWebhook(logger *zap.SugaredLogger, w config.Webhook, cs clients.Cl
 // Handle handles GitHub webhook events
 func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 	payload, err := w.hook.Parse(request, listenEvents...)
+
 	if err != nil {
 		if errors.Is(err, ghwebhooks.ErrEventNotFound) {
 			w.logger.Warnw("received unregistered github event", "error", err)
@@ -61,14 +64,30 @@ func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 	}
 
 	switch payload := payload.(type) {
+	// TODO: IssueEvent
 	case ghwebhooks.IssuesPayload:
-		w.logger.Debugw("received issues event")
+		w.logger.Infow("received issues event")
 	case ghwebhooks.WorkflowDispatchPayload:
-		w.logger.Debugw("received workflow dispatch event")
+		w.logger.Infow("received workflow dispatch event")
+		w.logger.Infow("Organization", "organization", payload.Organization.Login)
+		w.logger.Infow("Repository", "repository", payload.Repository.Name)
+		w.logger.Infow("Sender", "sender", payload.Sender.Login)
+		w.logger.Infow("Workflow", "workflow", payload.Workflow)
+		go w.a.ProcessWorkflowDispatchEvent(&payload)
 	case ghwebhooks.WorkflowRunPayload:
-		w.logger.Debugw("received workflow run event")
+		w.logger.Infow("received workflow run event")
+		w.logger.Infow("Organization", "organization", payload.Organization.Login)
+		w.logger.Infow("Repository", "repository", payload.Repository.Name)
+		w.logger.Infow("Sender", "sender", payload.Sender.Login)
+		w.logger.Infow("Workflow", "workflow", payload.Workflow.Name)
+		go w.a.ProcessWorkflowRunEvent(&payload)
 	case ghwebhooks.WorkflowJobPayload:
-		w.logger.Debugw("received workflow job event")
+		w.logger.Infow("received workflow job event")
+		w.logger.Infow("Organization", "organization", payload.Organization.Login)
+		w.logger.Infow("Repository", "repository", payload.Repository.Name)
+		w.logger.Infow("Sender", "sender", payload.Sender.Login)
+		w.logger.Infow("Workflow Job", "workflow_job", payload.WorkflowJob)
+		go w.a.ProcessWorkflowJobEvent(&payload)
 	default:
 		w.logger.Warnw("missing handler", "payload", payload)
 	}

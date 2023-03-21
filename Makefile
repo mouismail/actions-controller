@@ -7,7 +7,15 @@ COMMIT_ID = $(shell git rev-parse HEAD)
 HTTP_PORT = 3000
 
 # Targets
-.PHONY: test dev build start
+.PHONY: all test dev build start
+
+.PHONY: all
+all::
+	go mod tidy
+
+release:: all;
+
+start:  all bin/sap-actions-control --bind-addr 0.0.0.0 --log-level debug
 
 test:
 	go test -v ./...

@@ -25,7 +25,7 @@ func InitClients(logger *zap.SugaredLogger, config []config.Client) (ClientMap, 
 		}
 
 		if ghConfig != nil {
-			client, err := NewGithub(logger.Named(clientConfig.Name), clientConfig.OrganizationName, ghConfig)
+			client, err := NewGithub(logger.Named(clientConfig.Name), clientConfig.OrganizationName, clientConfig.ServerInfo, ghConfig)
 			if err != nil {
 				return nil, err
 			}

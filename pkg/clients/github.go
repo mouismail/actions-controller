@@ -23,12 +23,13 @@ type Github struct {
 	serverInfo     *config.ServerInfo
 }
 
-func NewGithub(logger *zap.SugaredLogger, organizationID string, config *config.GithubClient) (*Github, error) {
+func NewGithub(logger *zap.SugaredLogger, organizationID string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
 	a := &Github{
 		logger:         logger,
 		keyPath:        config.PrivateKeyCertPath,
 		appID:          config.AppID,
 		organizationID: organizationID,
+		serverInfo:     severInfo,
 	}
 
 	err := a.initClients()
@@ -45,11 +46,16 @@ func (a *Github) initClients() error {
 		return fmt.Errorf("error creating github app client %w", err)
 	}
 
-	installation, _, err := v3.NewClient(&http.Client{Transport: atr}).Apps.FindOrganizationInstallation(context.TODO(), a.organizationID)
+	enterpriseClient, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, &http.Client{Transport: atr})
+	//installation, _, err := v3.NewClient(&http.Client{Transport: atr}).Apps.FindOrganizationInstallation(context.TODO(), a.organizationID)
+	if err != nil {
+		return fmt.Errorf("error creating new Enterprise Client %w", err)
+	}
+
+	installation, _, err := enterpriseClient.Apps.FindOrganizationInstallation(context.TODO(), a.organizationID)
 	if err != nil {
 		return fmt.Errorf("error finding organization installation %w", err)
 	}
-
 	a.installationID = installation.GetID()
 
 	itr := ghinstallation.NewFromAppsTransport(atr, a.installationID)
@@ -57,7 +63,7 @@ func (a *Github) initClients() error {
 	a.atr = atr
 	a.itr = itr
 
-	a.logger.Infow("successfully initalized github app client", "organization-id", a.organizationID, "installation-id", a.installationID, "expected-events", installation.Events)
+	a.logger.Infow("successfully initialized github app client", "organization-id", a.organizationID, "installation-id", a.installationID, "expected-events", installation.Events)
 
 	return nil
 }

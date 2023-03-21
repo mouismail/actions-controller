@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	ghwebhooks "github.com/go-playground/webhooks/v6/github"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 
@@ -13,7 +14,7 @@ type WorkflowActionParams struct {
 	WorkflowId   int64
 	Organization string
 	Repository   string
-	WebhookEvent string
+	WebhookEvent ghwebhooks.Event
 }
 
 type WorkflowAction struct {

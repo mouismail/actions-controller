@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/go-github/v50/github"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 
@@ -15,15 +16,22 @@ import (
 )
 
 type IssueCommentCommand string
+type IssueCreateCommand string
 
 const (
 	IssueCommentCommandPrefix                     = "/"
 	IssueCommentBuildFork     IssueCommentCommand = IssueCommentCommandPrefix + "ok-to-build"
+	IssueCreateCommandPrefix                      = "/"
+	IssueCreateFork           IssueCreateCommand  = IssueCreateCommandPrefix + "ok-to-create"
 )
 
 var (
 	IssueCommentCommands = map[IssueCommentCommand]bool{
 		IssueCommentBuildFork: true,
+	}
+
+	IssueCreateCommands = map[IssueCreateCommand]bool{
+		IssueCreateFork: true,
 	}
 
 	AllowedAuthorAssociations = map[string]bool{
@@ -49,6 +57,15 @@ type IssuesActionParams struct {
 	CommentID         int64
 }
 
+type IssueParams struct {
+	RepositoryName string
+	RepositoryURL  string
+	Title          string
+	Body           string
+	assignees      *[]string
+	labels         *[]string
+}
+
 func NewIssuesAction(logger *zap.SugaredLogger, client *clients.Github, rawConfig map[string]any) (*IssuesAction, error) {
 	var typedConfig config.IssuesCommentHandlerConfig
 	err := mapstructure.Decode(rawConfig, &typedConfig)
@@ -68,16 +85,39 @@ func NewIssuesAction(logger *zap.SugaredLogger, client *clients.Github, rawConfi
 	}, nil
 }
 
-func (r *IssuesAction) HandleIssueComment(ctx context.Context, p *IssuesActionParams) error {
-	_, ok := r.targetRepos[p.RepositoryName]
+func (i *IssuesAction) CreateIssue(ctx context.Context, p *IssueParams) error {
+	_, ok := i.targetRepos[p.RepositoryName]
 	if !ok {
-		r.logger.Debugw("skip handling issues comment action, not in list of target repositories", "source-repo", p.RepositoryName)
+		i.logger.Debugw("skip creating issue, not in list of target repositories", "source-repo", p.RepositoryName)
+		return nil
+	}
+
+	issueTitle := strings.TrimSpace(p.Title)
+
+	_, ok = IssueCreateCommands[IssueCreateCommand(issueTitle)]
+	if !ok {
+		i.logger.Debugw("skip creating issue, message does not contain a valid command", "source-repo", p.RepositoryName)
+		return nil
+	}
+	switch IssueCreateCommand(issueTitle) {
+	case IssueCreateFork:
+		return i.createForkIssue(ctx, p)
+	default:
+		i.logger.Debugw("skip creating issue, message does not contain a valid command", "source-repo", p.RepositoryName)
+	}
+	return nil
+}
+
+func (i *IssuesAction) HandleIssueComment(ctx context.Context, p *IssuesActionParams) error {
+	_, ok := i.targetRepos[p.RepositoryName]
+	if !ok {
+		i.logger.Debugw("skip handling issues comment action, not in list of target repositories", "source-repo", p.RepositoryName)
 		return nil
 	}
 
 	_, ok = AllowedAuthorAssociations[p.AuthorAssociation]
 	if !ok {
-		r.logger.Debugw("skip handling issues comment action, author is not allowed", "source-repo", p.RepositoryName, "association", p.AuthorAssociation)
+		i.logger.Debugw("skip handling issues comment action, author is not allowed", "source-repo", p.RepositoryName, "association", p.AuthorAssociation)
 		return nil
 	}
 
@@ -85,31 +125,31 @@ func (r *IssuesAction) HandleIssueComment(ctx context.Context, p *IssuesActionPa
 
 	_, ok = IssueCommentCommands[IssueCommentCommand(comment)]
 	if !ok {
-		r.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)
+		i.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)
 		return nil
 	}
 
 	switch IssueCommentCommand(comment) {
 	case IssueCommentBuildFork:
-		return r.buildForkPR(ctx, p)
+		return i.buildForkPR(ctx, p)
 	default:
-		r.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)
+		i.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)
 		return nil
 	}
 }
 
-func (r *IssuesAction) buildForkPR(ctx context.Context, p *IssuesActionParams) error {
-	pullRequest, _, err := r.client.GetV3Client().PullRequests.Get(ctx, r.client.Organization(), p.RepositoryName, p.PullRequestNumber)
+func (i *IssuesAction) buildForkPR(ctx context.Context, p *IssuesActionParams) error {
+	pullRequest, _, err := i.client.GetV3Client().PullRequests.Get(ctx, i.client.Organization(), p.RepositoryName, p.PullRequestNumber)
 	if err != nil {
 		return fmt.Errorf("error finding issue related pull request %w", err)
 	}
 
 	if pullRequest.Head.Repo.Fork == nil || !*pullRequest.Head.Repo.Fork {
-		r.logger.Debugw("skip handling issues comment action, pull request is not from a fork", "source-repo", p.RepositoryName)
+		i.logger.Debugw("skip handling issues comment action, pull request is not from a fork", "source-repo", p.RepositoryName)
 		return nil
 	}
 
-	token, err := r.client.GitToken(ctx)
+	token, err := i.client.GitToken(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating git token %w", err)
 	}
@@ -127,9 +167,9 @@ func (r *IssuesAction) buildForkPR(ctx context.Context, p *IssuesActionParams) e
 		return fmt.Errorf("error pushing to target remote repository %w", err)
 	}
 
-	r.logger.Infow("triggered fork build action by pushing to fork-build branch", "source-repo", p.RepositoryName, "branch", headRef)
+	i.logger.Infow("triggered fork build action by pushing to fork-build branch", "source-repo", p.RepositoryName, "branch", headRef)
 
-	_, _, err = r.client.GetV3Client().Reactions.CreateIssueCommentReaction(ctx, r.client.Organization(), p.RepositoryName, p.CommentID, "rocket")
+	_, _, err = i.client.GetV3Client().Reactions.CreateIssueCommentReaction(ctx, i.client.Organization(), p.RepositoryName, p.CommentID, "rocket")
 	if err != nil {
 		return fmt.Errorf("error creating issue comment reaction %w", err)
 	}
@@ -139,5 +179,18 @@ func (r *IssuesAction) buildForkPR(ctx context.Context, p *IssuesActionParams) e
 		return err
 	}
 
+	return nil
+}
+
+func (i *IssuesAction) createForkIssue(ctx context.Context, p *IssueParams) error {
+	_, _, err := i.client.GetV3Client().Issues.Create(ctx, i.client.Organization(), p.RepositoryName, &github.IssueRequest{
+		Title:     github.String(p.Title),
+		Body:      github.String(p.Body),
+		Assignees: p.assignees,
+		Labels:    p.labels,
+	})
+	if err != nil {
+		i.logger.Errorw("error creating issue", "error", err)
+	}
 	return nil
 }

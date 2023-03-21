@@ -50,6 +50,12 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 				return nil, err
 			}
 			actions.ih = append(actions.ih, h)
+		case ActionWorkflowHandler:
+			h, err := NewWorkflowAction(logger, c.(*clients.Github), spec.Args)
+			if err != nil {
+				return nil, err
+			}
+			actions.wa = append(actions.wa, h)
 		default:
 			return nil, fmt.Errorf("handler type not supported: %s", t)
 		}
@@ -107,7 +113,94 @@ func (w *WebhookActions) ProcessIssueCommentEvent(payload *ghwebhooks.IssueComme
 }
 
 func (w *WebhookActions) ProcessWorkflowDispatchEvent(payload *ghwebhooks.WorkflowDispatchPayload) {
+	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 
+	for _, wa := range w.wa {
+		wa := wa
+		g.Go(func() error {
+			params := &WorkflowActionParams{
+				Repository:   payload.Repository.Name,
+				Organization: payload.Organization.Login,
+				// TODO: we need to get the run Id from the workflow dispatch event
+				WorkflowId:   123,
+				WebhookEvent: ghwebhooks.WorkflowDispatchEvent,
+			}
+
+			err := wa.handleWorkflowDispatch(ctx, params)
+			if err != nil {
+				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		w.logger.Errorw("errors processing event", "error", err)
+	}
+}
+
+func (w *WebhookActions) ProcessWorkflowJobEvent(payload *ghwebhooks.WorkflowJobPayload) {
+	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, wa := range w.wa {
+		wa := wa
+		g.Go(func() error {
+			params := &WorkflowActionParams{
+				Repository:   payload.Repository.Name,
+				Organization: payload.Organization.Login,
+				WorkflowId:   payload.WorkflowJob.ID,
+				WebhookEvent: ghwebhooks.WorkflowDispatchEvent,
+			}
+
+			err := wa.handleWorkflowDispatch(ctx, params)
+			if err != nil {
+				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		w.logger.Errorw("errors processing event", "error", err)
+	}
+}
+
+func (w *WebhookActions) ProcessWorkflowRunEvent(payload *ghwebhooks.WorkflowRunPayload) {
+	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, wa := range w.wa {
+		wa := wa
+		g.Go(func() error {
+			params := &WorkflowActionParams{
+				Repository:   payload.Repository.Name,
+				Organization: payload.Organization.Login,
+				WorkflowId:   payload.Workflow.ID,
+				WebhookEvent: ghwebhooks.WorkflowRunEvent,
+			}
+
+			err := wa.handleWorkflowDispatch(ctx, params)
+			if err != nil {
+				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		w.logger.Errorw("errors processing event", "error", err)
+	}
 }
 
 func extractTag(payload *ghwebhooks.PushPayload) string {

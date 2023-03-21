@@ -1,6 +1,7 @@
 .env
 *.pem
 
+
 # Created by https://www.toptal.com/developers/gitignore/api/go,intellij+all,linux,macos,vim,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,intellij+all,linux,macos,vim,windows
 
@@ -208,6 +209,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-
-# End of https://www.toptal.com/developers/gitignore/api/go,intellij+all,linux,macos,vim,windows
-

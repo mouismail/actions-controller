@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -23,6 +23,7 @@ type Client struct {
 	GithubAuthConfig *GithubClient `json:"github" description:"auth config a github client"`
 	Name             string        `json:"name" description:"name of the client, used for referencing in webhook config"`
 	OrganizationName string        `json:"organization" description:"name of the organization that this client will act on"`
+	ServerInfo       *ServerInfo   `json:"server_info" description:"GitHub Enterprise server info for BaseURL and UploadURL"`
 }
 
 type GithubClient struct {
@@ -47,7 +48,7 @@ type ServerInfo struct {
 }
 
 func New(configPath string) (*Configuration, error) {
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func New(configPath string) (*Configuration, error) {
 }
 
 func (w WebhookActions) String() string {
-	actions := []string{}
+	var actions []string
 	for _, h := range w {
 		actions = append(actions, h.Type)
 	}

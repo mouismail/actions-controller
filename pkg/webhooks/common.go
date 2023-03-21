@@ -19,6 +19,5 @@ func InitWebhooks(logger *zap.SugaredLogger, cs clients.ClientMap, c *config.Con
 		http.HandleFunc(w.ServePath, controller.Handle)
 		logger.Infow("initialized github webhook", "serve-path", w.ServePath)
 	}
-
 	return nil
 }
