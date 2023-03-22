@@ -17,3 +17,8 @@ webhooks:
         args:
           repository: sap-demos
 version: 0.1
+IssueCreatedHandlerConfig:
+  - Assignees: [mouismail, stoe]
+    Labels: [bug, actions-control]
+    issue-title: "Issue created by {{.Issue.User.Login}}"
+    issue-body: "Workflow created by {{.Issue.User.Login}} for Workflow {{.Workflow.Name}} on Repo {{.Repo.Name}} and Org {{.Repo.Owner}}."

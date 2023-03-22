@@ -13,32 +13,7 @@ import (
 	"github.tools.sap/actions-rollout-app/pkg/clients"
 	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/git"
-)
-
-type IssueCommentCommand string
-type IssueCreateCommand string
-
-const (
-	IssueCommentCommandPrefix                     = "/"
-	IssueCommentBuildFork     IssueCommentCommand = IssueCommentCommandPrefix + "ok-to-build"
-	IssueCreateCommandPrefix                      = "/"
-	IssueCreateFork           IssueCreateCommand  = IssueCreateCommandPrefix + "ok-to-create"
-)
-
-var (
-	IssueCommentCommands = map[IssueCommentCommand]bool{
-		IssueCommentBuildFork: true,
-	}
-
-	IssueCreateCommands = map[IssueCreateCommand]bool{
-		IssueCreateFork: true,
-	}
-
-	AllowedAuthorAssociations = map[string]bool{
-		"COLLABORATOR": true,
-		"MEMBER":       true,
-		"OWNER":        true,
-	}
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 )
 
 type IssuesAction struct {
@@ -94,13 +69,13 @@ func (i *IssuesAction) CreateIssue(ctx context.Context, p *IssueParams) error {
 
 	issueTitle := strings.TrimSpace(p.Title)
 
-	_, ok = IssueCreateCommands[IssueCreateCommand(issueTitle)]
+	_, ok = utils.IssueCreateCommands[utils.IssueCreateCommand(issueTitle)]
 	if !ok {
 		i.logger.Debugw("skip creating issue, message does not contain a valid command", "source-repo", p.RepositoryName)
 		return nil
 	}
-	switch IssueCreateCommand(issueTitle) {
-	case IssueCreateFork:
+	switch utils.IssueCreateCommand(issueTitle) {
+	case utils.IssueCreateFork:
 		return i.createForkIssue(ctx, p)
 	default:
 		i.logger.Debugw("skip creating issue, message does not contain a valid command", "source-repo", p.RepositoryName)
@@ -115,7 +90,7 @@ func (i *IssuesAction) HandleIssueComment(ctx context.Context, p *IssuesActionPa
 		return nil
 	}
 
-	_, ok = AllowedAuthorAssociations[p.AuthorAssociation]
+	_, ok = utils.AllowedAuthorAssociations[p.AuthorAssociation]
 	if !ok {
 		i.logger.Debugw("skip handling issues comment action, author is not allowed", "source-repo", p.RepositoryName, "association", p.AuthorAssociation)
 		return nil
@@ -123,14 +98,14 @@ func (i *IssuesAction) HandleIssueComment(ctx context.Context, p *IssuesActionPa
 
 	comment := strings.TrimSpace(p.Comment)
 
-	_, ok = IssueCommentCommands[IssueCommentCommand(comment)]
+	_, ok = utils.IssueCommentCommands[utils.IssueCommentCommand(comment)]
 	if !ok {
 		i.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)
 		return nil
 	}
 
-	switch IssueCommentCommand(comment) {
-	case IssueCommentBuildFork:
+	switch utils.IssueCommentCommand(comment) {
+	case utils.IssueCommentBuildFork:
 		return i.buildForkPR(ctx, p)
 	default:
 		i.logger.Debugw("skip handling issues comment action, message does not contain a valid command", "source-repo", p.RepositoryName)

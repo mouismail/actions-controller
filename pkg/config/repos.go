@@ -1,4 +1,4 @@
-package repos
+package config
 
 import (
 	"os"
@@ -13,9 +13,6 @@ type ActionConfig struct {
 	Repos        []string `yaml:"repos,omitempty"`
 }
 
-// LoadConfig load yaml file from path
-// unmarshal into Config struct
-// return Config struct
 func LoadConfig(path string) (config ActionConfig, err error) {
 	source, err := os.ReadFile(path)
 

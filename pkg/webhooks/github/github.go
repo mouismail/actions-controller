@@ -69,24 +69,12 @@ func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 		w.logger.Infow("received issues event")
 	case ghwebhooks.WorkflowDispatchPayload:
 		w.logger.Infow("received workflow dispatch event")
-		w.logger.Infow("Organization", "organization", payload.Organization.Login)
-		w.logger.Infow("Repository", "repository", payload.Repository.Name)
-		w.logger.Infow("Sender", "sender", payload.Sender.Login)
-		w.logger.Infow("Workflow", "workflow", payload.Workflow)
 		go w.a.ProcessWorkflowDispatchEvent(&payload)
 	case ghwebhooks.WorkflowRunPayload:
 		w.logger.Infow("received workflow run event")
-		w.logger.Infow("Organization", "organization", payload.Organization.Login)
-		w.logger.Infow("Repository", "repository", payload.Repository.Name)
-		w.logger.Infow("Sender", "sender", payload.Sender.Login)
-		w.logger.Infow("Workflow", "workflow", payload.Workflow.Name)
 		go w.a.ProcessWorkflowRunEvent(&payload)
 	case ghwebhooks.WorkflowJobPayload:
 		w.logger.Infow("received workflow job event")
-		w.logger.Infow("Organization", "organization", payload.Organization.Login)
-		w.logger.Infow("Repository", "repository", payload.Repository.Name)
-		w.logger.Infow("Sender", "sender", payload.Sender.Login)
-		w.logger.Infow("Workflow Job", "workflow_job", payload.WorkflowJob)
 		go w.a.ProcessWorkflowJobEvent(&payload)
 	default:
 		w.logger.Warnw("missing handler", "payload", payload)

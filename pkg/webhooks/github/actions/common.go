@@ -3,21 +3,18 @@ package actions
 import (
 	"context"
 	"fmt"
+
+	"reflect"
 	"strconv"
 	"strings"
 
 	"github.tools.sap/actions-rollout-app/pkg/clients"
 	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/webhooks/constants"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-)
-
-const (
-	ActionIssuesHandler   string = "issue-handling"
-	ActionWorkflowHandler string = "workflow-handling"
 )
 
 type WebhookActions struct {
@@ -34,30 +31,29 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 	for _, spec := range config {
 		c, ok := cs[spec.Client]
 		if !ok {
-			return nil, fmt.Errorf("webhook action client not found: %s", spec.Client)
+			return nil, fmt.Errorf(utils.ErrClientNotFound, spec.Client)
 		}
 
-		switch clientType := c.(type) {
-		case *clients.Github:
-		default:
-			return nil, fmt.Errorf("action %s only supports github clients, not: %s", spec.Type, clientType)
+		ghc, ok := c.(*clients.Github)
+		if !ok {
+			return nil, fmt.Errorf(utils.ErrInvalidClient, spec.Type, reflect.TypeOf(c))
 		}
 
 		switch t := spec.Type; t {
-		case ActionIssuesHandler:
-			h, err := NewIssuesAction(logger, c.(*clients.Github), spec.Args)
+		case utils.ActionIssuesHandler:
+			h, err := NewIssuesAction(logger, ghc, spec.Args)
 			if err != nil {
 				return nil, err
 			}
 			actions.ih = append(actions.ih, h)
-		case ActionWorkflowHandler:
-			h, err := NewWorkflowAction(logger, c.(*clients.Github), spec.Args)
+		case utils.ActionWorkflowHandler:
+			h, err := NewWorkflowAction(logger, ghc, spec.Args)
 			if err != nil {
 				return nil, err
 			}
 			actions.wa = append(actions.wa, h)
 		default:
-			return nil, fmt.Errorf("handler type not supported: %s", t)
+			return nil, fmt.Errorf(utils.ErrUnsupportedType, t)
 		}
 
 		logger.Debugw("initialized github webhook action", "name", spec.Type)
@@ -67,7 +63,7 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 }
 
 func (w *WebhookActions) ProcessIssueCommentEvent(payload *ghwebhooks.IssueCommentPayload) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -113,7 +109,7 @@ func (w *WebhookActions) ProcessIssueCommentEvent(payload *ghwebhooks.IssueComme
 }
 
 func (w *WebhookActions) ProcessWorkflowDispatchEvent(payload *ghwebhooks.WorkflowDispatchPayload) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -144,7 +140,7 @@ func (w *WebhookActions) ProcessWorkflowDispatchEvent(payload *ghwebhooks.Workfl
 }
 
 func (w *WebhookActions) ProcessWorkflowJobEvent(payload *ghwebhooks.WorkflowJobPayload) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -174,7 +170,7 @@ func (w *WebhookActions) ProcessWorkflowJobEvent(payload *ghwebhooks.WorkflowJob
 }
 
 func (w *WebhookActions) ProcessWorkflowRunEvent(payload *ghwebhooks.WorkflowRunPayload) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.WebhookHandleTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 

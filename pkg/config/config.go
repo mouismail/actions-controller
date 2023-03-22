@@ -7,6 +7,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// TODO: VCSType is not needed to be removed
+
 type VCSType string
 
 const (
@@ -45,6 +47,13 @@ type Webhook struct {
 type ServerInfo struct {
 	BaseURL   string `json:"base_url"`
 	UploadURL string `json:"upload_url"`
+}
+
+type IssueCreatedHandlerConfig struct {
+	IssueTitle string   `mapstructure:"issue-title" description:"the title of the issue"`
+	IssueBody  string   `mapstructure:"issue-body" description:"the body of the issue"`
+	Assignees  []string `mapstructure:"assignees" description:"the assignees for the issue"`
+	Labels     []string `mapstructure:"labels" description:"the labels for the issue"`
 }
 
 func New(configPath string) (*Configuration, error) {

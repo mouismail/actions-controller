@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.tools.sap/actions-rollout-app/pkg/config"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 
 	"go.uber.org/zap"
 )
@@ -15,23 +16,22 @@ type Client interface {
 	Organization() string
 }
 
-func InitClients(logger *zap.SugaredLogger, config []config.Client) (ClientMap, error) {
-	cs := ClientMap{}
-	for _, clientConfig := range config {
-		ghConfig := clientConfig.GithubAuthConfig
+func InitClients(logger *zap.SugaredLogger, clientConfigs []config.Client) (ClientMap, error) {
+	clients := make(ClientMap)
 
-		if ghConfig == nil {
-			return nil, fmt.Errorf("github client config must be provided for client %q", clientConfig.Name)
+	for _, config := range clientConfigs {
+		if config.GithubAuthConfig == nil {
+			return nil, fmt.Errorf(utils.ErrMissingClintConfig, config.Name)
 		}
 
-		if ghConfig != nil {
-			client, err := NewGithub(logger.Named(clientConfig.Name), clientConfig.OrganizationName, clientConfig.ServerInfo, ghConfig)
-			if err != nil {
-				return nil, err
-			}
-
-			cs[clientConfig.Name] = client
+		logger := logger.Named(config.Name)
+		client, err := NewGithub(logger, config.OrganizationName, config.ServerInfo, config.GithubAuthConfig)
+		if err != nil {
+			return nil, err
 		}
+
+		clients[config.Name] = client
 	}
-	return cs, nil
+
+	return clients, nil
 }

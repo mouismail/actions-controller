@@ -15,7 +15,7 @@ all::
 
 release:: all;
 
-start:  all bin/sap-actions-control --bind-addr 0.0.0.0 --log-level debug
+start: all bin/sap-actions-control --bind-addr 0.0.0.0 --log-level debug
 
 test:
 	go test -v ./...
