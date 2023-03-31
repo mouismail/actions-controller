@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.tools.sap/actions-rollout-app/pkg/config"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 	"golang.org/x/oauth2"
-	"log"
 	"net/http"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
@@ -43,53 +43,35 @@ func NewGithub(logger *zap.SugaredLogger, organizationID string, severInfo *conf
 }
 
 func (a *Github) initClients() error {
+	ctx := context.Background()
 	atr, err := ghinstallation.NewAppsTransportKeyFromFile(http.DefaultTransport, a.appID, a.keyPath)
 	atr.BaseURL = a.serverInfo.BaseURL
 	if err != nil {
-		return fmt.Errorf("error creating github app client %w", err)
+		return fmt.Errorf(utils.ErrMissingClient, err)
 	}
 
 	enterpriseClient, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, &http.Client{Transport: atr})
-	//installation, _, err := v3.NewClient(&http.Client{Transport: atr}).Apps.FindOrganizationInstallation(context.TODO(), a.organizationID)
 	if err != nil {
-		return fmt.Errorf("error creating new Enterprise Client %w", err)
+		return fmt.Errorf(utils.ErrMissingEnterpriseClient, err)
 	}
 
-	installation, _, err := enterpriseClient.Apps.FindOrganizationInstallation(context.TODO(), a.organizationID)
+	installation, _, err := enterpriseClient.Apps.FindOrganizationInstallation(ctx, a.organizationID)
 	if err != nil {
-		return fmt.Errorf("error finding organization installation %w", err)
+		return fmt.Errorf(utils.ErrFindingOrgInstallations, err)
 	}
 
 	a.installationID = installation.GetID()
 
-	// Use the GitHub client to make API requests here
-	ctx := context.Background()
 	installationToken, _, err := enterpriseClient.Apps.CreateInstallationToken(ctx, a.installationID, nil)
 	if err != nil {
-		log.Fatalf("Error creating installation token: %v", err)
+		return fmt.Errorf(utils.ErrCreatingInstallationToken, err)
 	}
 	a.installationToken = installationToken.GetToken()
 
-	newClient, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: installationToken.GetToken()},
-	)))
-
-	if err != nil {
-		log.Fatalf("Error creating new client: %v", err)
-	}
-
-	user, _, err := newClient.Users.Get(ctx, "mouismail")
-	if err != nil {
-		log.Fatalf("Error getting authenticated user: %v", err)
-	}
-
-	fmt.Printf("Authenticated user: %s\n", user.GetLogin())
-
 	itr := ghinstallation.NewFromAppsTransport(atr, a.installationID)
 	if err != nil {
-		return fmt.Errorf("error creating github app client %w", err)
+		return fmt.Errorf(utils.ErrMissingClient, err)
 	}
-
 	itr.BaseURL = a.serverInfo.BaseURL
 
 	a.atr = atr
