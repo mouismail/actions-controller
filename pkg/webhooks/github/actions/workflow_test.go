@@ -40,7 +40,7 @@ func TestWorkflowAction_HandleWorkflow(t *testing.T) {
 		client       *clients.Github
 		repository   string
 		organization string
-		workflowId   int64
+		workflowId   string
 	}
 	type args struct {
 		ctx context.Context
@@ -59,7 +59,7 @@ func TestWorkflowAction_HandleWorkflow(t *testing.T) {
 				client:       tt.fields.client,
 				repository:   tt.fields.repository,
 				organization: tt.fields.organization,
-				workflowId:   tt.fields.workflowId,
+				workflow:     tt.fields.workflowId,
 			}
 			if err := w.HandleWorkflow(tt.args.ctx, tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("HandleWorkflow() error = %v, wantErr %v", err, tt.wantErr)
@@ -74,7 +74,7 @@ func TestWorkflowAction_handleWorkflowDispatch(t *testing.T) {
 		client       *clients.Github
 		repository   string
 		organization string
-		workflowId   int64
+		workflowId   string
 	}
 	type args struct {
 		ctx context.Context
@@ -93,7 +93,7 @@ func TestWorkflowAction_handleWorkflowDispatch(t *testing.T) {
 				client:       tt.fields.client,
 				repository:   tt.fields.repository,
 				organization: tt.fields.organization,
-				workflowId:   tt.fields.workflowId,
+				workflow:     tt.fields.workflowId,
 			}
 			if err := w.handleWorkflowDispatch(tt.args.ctx, tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("handleWorkflowDispatch() error = %v, wantErr %v", err, tt.wantErr)
@@ -108,7 +108,7 @@ func TestWorkflowAction_handleWorkflowJob(t *testing.T) {
 		client       *clients.Github
 		repository   string
 		organization string
-		workflowId   int64
+		workflowId   string
 	}
 	type args struct {
 		ctx context.Context
@@ -127,7 +127,7 @@ func TestWorkflowAction_handleWorkflowJob(t *testing.T) {
 				client:       tt.fields.client,
 				repository:   tt.fields.repository,
 				organization: tt.fields.organization,
-				workflowId:   tt.fields.workflowId,
+				workflow:     tt.fields.workflowId,
 			}
 			if err := w.handleWorkflowJob(tt.args.ctx, tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("handleWorkflowJob() error = %v, wantErr %v", err, tt.wantErr)
@@ -142,7 +142,7 @@ func TestWorkflowAction_handleWorkflowRun(t *testing.T) {
 		client       *clients.Github
 		repository   string
 		organization string
-		workflowId   int64
+		workflowId   string
 	}
 	type args struct {
 		ctx context.Context
@@ -161,7 +161,7 @@ func TestWorkflowAction_handleWorkflowRun(t *testing.T) {
 				client:       tt.fields.client,
 				repository:   tt.fields.repository,
 				organization: tt.fields.organization,
-				workflowId:   tt.fields.workflowId,
+				workflow:     tt.fields.workflowId,
 			}
 			if err := w.handleWorkflowRun(tt.args.ctx, tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("handleWorkflowRun() error = %v, wantErr %v", err, tt.wantErr)

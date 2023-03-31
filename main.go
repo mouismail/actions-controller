@@ -3,31 +3,32 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
 	"log"
 	"net/http"
 	"strings"
 
-	"go.uber.org/zap"
+	"github.tools.sap/actions-rollout-app/pkg/clients"
+	"github.tools.sap/actions-rollout-app/pkg/config"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/pkg/webhooks"
 
 	"github.com/go-playground/validator"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/webhooks"
+
+	"go.uber.org/zap"
 )
 
 const (
 	cfgFileType = "yaml"
-	moduleName  = "config"
+	moduleName  = "sap-actions-controller"
 )
 
 var (
 	cfgFile string
 	logger  *zap.SugaredLogger
 
-	c *config.Configuration
+	globalConfig *config.Configuration
 )
 
 // Opts is required in order to have proper validation for args from cobra and viper.
@@ -130,7 +131,7 @@ func initConfig() error {
 
 func loadConfig() error {
 	var err error
-	c, err = config.New(viper.ConfigFileUsed())
+	globalConfig, err = config.New(viper.ConfigFileUsed())
 	if err != nil {
 		return err
 	}
@@ -159,12 +160,12 @@ func initLogging() {
 }
 
 func run(opts *Opts) error {
-	cs, err := clients.InitClients(logger, c.Clients)
+	cs, err := clients.InitClients(logger, globalConfig.Clients)
 	if err != nil {
 		return err
 	}
 
-	err = webhooks.InitWebhooks(logger, cs, c)
+	err = webhooks.InitWebhooks(logger, cs, globalConfig)
 	if err != nil {
 		return err
 	}

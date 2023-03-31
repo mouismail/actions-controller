@@ -74,9 +74,8 @@ func DeleteBranch(repoURL, branch string) error {
 //		return fmt.Errorf("error cloning git repo %w", err)
 //	}
 //
-//	_, err = r.Worktree().Checkout(&git.CheckoutOptions{
-//		Branch: plumbing.NewBranchReferenceName(branch),
-//	})
+//	_, err = r.Worktree()
+//
 //	if err != nil {
 //		return fmt.Errorf("error checking out branch %w", err)
 //	}

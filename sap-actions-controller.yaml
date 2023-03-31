@@ -1,3 +1,4 @@
+---
 clients:
   - name: actions-control
     organization: mouismail-ghes
@@ -6,19 +7,14 @@ clients:
       upload_url: https://octodemo.com/api/v3/uploads/
     github:
       app-id: 61
-      key-path: test/actions-control.2023-03-17.private-key.pem
+      key-path: /Users/mouismail/GitHub/mouismail/sap-actions-control/test/actions-control.2023-03-30.private-key.pem
 webhooks:
   - serve-path: /webhook
     secret: development
-    vcs: github
     actions:
       - type: workflow-handling
         client: actions-control
         args:
           repository: sap-demos
-version: 0.1
-IssueCreatedHandlerConfig:
-  - Assignees: [mouismail, stoe]
-    Labels: [bug, actions-control]
-    issue-title: "Issue created by {{.Issue.User.Login}}"
-    issue-body: "Workflow created by {{.Issue.User.Login}} for Workflow {{.Workflow.Name}} on Repo {{.Repo.Name}} and Org {{.Repo.Owner}}."
+          organization: mouismail-ghes
+          workflow: actions-control

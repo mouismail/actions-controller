@@ -12,7 +12,6 @@ import (
 type ClientMap map[string]Client
 
 type Client interface {
-	VCS() config.VCSType
 	Organization() string
 }
 
@@ -21,7 +20,7 @@ func InitClients(logger *zap.SugaredLogger, clientConfigs []config.Client) (Clie
 
 	for _, config := range clientConfigs {
 		if config.GithubAuthConfig == nil {
-			return nil, fmt.Errorf(utils.ErrMissingClintConfig, config.Name)
+			return nil, fmt.Errorf(utils.ErrMissingClientConfig, config.Name)
 		}
 
 		logger := logger.Named(config.Name)

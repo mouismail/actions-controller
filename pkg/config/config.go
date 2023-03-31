@@ -7,14 +7,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// TODO: VCSType is not needed to be removed
-
-type VCSType string
-
-const (
-	Github VCSType = "github"
-)
-
 type Configuration struct {
 	Clients  []Client  `json:"clients" description:"client configurations"`
 	Webhooks []Webhook `json:"webhooks" description:"webhook configurations"`
@@ -33,12 +25,7 @@ type GithubClient struct {
 	PrivateKeyCertPath string `json:"key-path" description:"private key pem path of github app"`
 }
 
-type GitlabClient struct {
-	Token string `json:"token" description:"auth token for gitlab client"`
-}
-
 type Webhook struct {
-	VCS       VCSType        `json:"vcs" description:"type of the vcs"`
 	ServePath string         `json:"serve-path" description:"path of the webhook to serve on"`
 	Secret    string         `json:"secret" description:"the webhook secret"`
 	Actions   WebhookActions `json:"actions" description:"webhook actions"`
@@ -50,10 +37,10 @@ type ServerInfo struct {
 }
 
 type IssueCreatedHandlerConfig struct {
-	IssueTitle string   `mapstructure:"issue-title" description:"the title of the issue"`
-	IssueBody  string   `mapstructure:"issue-body" description:"the body of the issue"`
-	Assignees  []string `mapstructure:"assignees" description:"the assignees for the issue"`
-	Labels     []string `mapstructure:"labels" description:"the labels for the issue"`
+	IssueTitle string   `json:"issue_title" description:"the title of the issue"`
+	IssueBody  string   `json:"issue_body" description:"the body of the issue"`
+	Assignees  []string `json:"assignees" description:"the assignees for the issue"`
+	Labels     []string `json:"labels" description:"the labels for the issue"`
 }
 
 func New(configPath string) (*Configuration, error) {

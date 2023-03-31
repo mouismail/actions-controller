@@ -162,41 +162,6 @@ func TestGithub_Organization(t *testing.T) {
 	}
 }
 
-func TestGithub_VCS(t *testing.T) {
-	type fields struct {
-		logger         *zap.SugaredLogger
-		keyPath        string
-		appID          int64
-		installationID int64
-		organizationID string
-		atr            *ghinstallation.AppsTransport
-		itr            *ghinstallation.Transport
-		serverInfo     *config.ServerInfo
-	}
-	var tests []struct {
-		name   string
-		fields fields
-		want   config.VCSType
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := &Github{
-				logger:         tt.fields.logger,
-				keyPath:        tt.fields.keyPath,
-				appID:          tt.fields.appID,
-				installationID: tt.fields.installationID,
-				organizationID: tt.fields.organizationID,
-				atr:            tt.fields.atr,
-				itr:            tt.fields.itr,
-				serverInfo:     tt.fields.serverInfo,
-			}
-			if got := a.VCS(); got != tt.want {
-				t.Errorf("VCS() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestGithub_initClients(t *testing.T) {
 	type fields struct {
 		logger         *zap.SugaredLogger

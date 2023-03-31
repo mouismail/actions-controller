@@ -64,9 +64,6 @@ func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 	}
 
 	switch payload := payload.(type) {
-	// TODO: IssueEvent
-	case ghwebhooks.IssuesPayload:
-		w.logger.Infow("received issues event")
 	case ghwebhooks.WorkflowDispatchPayload:
 		w.logger.Infow("received workflow dispatch event")
 		go w.a.ProcessWorkflowDispatchEvent(&payload)

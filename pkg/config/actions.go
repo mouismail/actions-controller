@@ -13,7 +13,7 @@ type IssuesCommentHandlerConfig struct {
 }
 
 type WorkflowHandleConfig struct {
-	Repo       string `mapstructure:"repo" description:"the repository where that a workflow got triggered"`
-	Org        string `mapstructure:"org" description:"the organization where that a workflow got triggered"`
-	WorkflowId int64  `mapstructure:"workflow-id" description:"the id of the workflow that got triggered"`
+	Repo     string `mapstructure:"repo" description:"the repository where that a workflow got triggered"`
+	Org      string `mapstructure:"org" description:"the organization where that a workflow got triggered"`
+	Workflow string `mapstructure:"workflow" description:"the id of the workflow that got triggered"`
 }
