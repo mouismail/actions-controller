@@ -10,13 +10,28 @@ import (
 type Configuration struct {
 	Clients  []Client  `json:"clients" description:"client configurations"`
 	Webhooks []Webhook `json:"webhooks" description:"webhook configurations"`
+	Repos    []Repo    `json:"repos" description:"repository configurations"`
 	Raw      []byte
+	Global   []GlobalConfig `json:"global" description:"global configurations"`
+}
+
+type GlobalConfig struct {
+	Workers float64 `json:"workers" description:"the number of workers that will be used to process the configuration files"`
+}
+
+type Repo struct {
+	Organization   string    `json:"organization" description:"the organization where the repository is located"`
+	Repository     string    `json:"repository" description:"the repository where the configuration files are located"`
+	FilesPath      *[]string `json:"files_path" description:"the path to the configuration files"`
+	Branch         string    `json:"branch" description:"the branch where the configuration files are located"`
+	WorkerPoolSize int       `json:"worker_pool_size" description:"the number of workers that will be used to process the configuration files"`
 }
 
 type Client struct {
 	GithubAuthConfig *GithubClient `json:"github" description:"auth config a github client"`
 	Name             string        `json:"name" description:"name of the client, used for referencing in webhook config"`
 	OrganizationName string        `json:"organization" description:"name of the organization that this client will act on"`
+	RepositoryName   string        `json:"repository" description:"the repository where the configuration files are located"`
 	ServerInfo       *ServerInfo   `json:"server_info" description:"GitHub Enterprise server info for BaseURL and UploadURL"`
 }
 

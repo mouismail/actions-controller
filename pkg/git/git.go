@@ -64,21 +64,3 @@ func DeleteBranch(repoURL, branch string) error {
 
 	return nil
 }
-
-//func ReadConfigFile(repoURL, branch string) error {
-//	r, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
-//		URL:   repoURL,
-//		Depth: 1,
-//	})
-//	if err != nil {
-//		return fmt.Errorf("error cloning git repo %w", err)
-//	}
-//
-//	_, err = r.Worktree()
-//
-//	if err != nil {
-//		return fmt.Errorf("error checking out branch %w", err)
-//	}
-//
-//	return nil
-//}

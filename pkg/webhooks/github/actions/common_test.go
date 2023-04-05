@@ -35,32 +35,6 @@ func TestInitActions(t *testing.T) {
 	}
 }
 
-func TestWebhookActions_ProcessIssueCommentEvent(t *testing.T) {
-	type fields struct {
-		logger *zap.SugaredLogger
-		ih     []*IssuesAction
-		wa     []*WorkflowAction
-	}
-	type args struct {
-		payload *ghwebhooks.IssueCommentPayload
-	}
-	var tests []struct {
-		name   string
-		fields fields
-		args   args
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := &WebhookActions{
-				logger: tt.fields.logger,
-				ih:     tt.fields.ih,
-				wa:     tt.fields.wa,
-			}
-			w.ProcessIssueCommentEvent(tt.args.payload)
-		})
-	}
-}
-
 func TestWebhookActions_ProcessWorkflowDispatchEvent(t *testing.T) {
 	type fields struct {
 		logger *zap.SugaredLogger

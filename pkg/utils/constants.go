@@ -17,6 +17,7 @@ const (
 	ErrFindingOrgInstallations                       = "error finding organization app installations %w"
 	ActionIssuesHandler          string              = "issue-handling"
 	ActionWorkflowHandler        string              = "workflow-handling"
+	ActionRepoHandler            string              = "repo-handling"
 	IssueCommentCommandPrefix                        = "/"
 	IssueCommentBuildFork        IssueCommentCommand = IssueCommentCommandPrefix + "ok-to-build"
 	IssueCreateCommandPrefix                         = "/"

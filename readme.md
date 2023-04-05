@@ -1,5 +1,10 @@
 ## GitHub App permissions
 
+
+300k repos
+
+any action event (dispatch, run, job) => repo (trigger)
+
 ### Repository permissions
 
 - **Actions** Workflows, workflow runs and artifacts. `read & write`

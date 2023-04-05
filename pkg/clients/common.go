@@ -13,6 +13,7 @@ type ClientMap map[string]Client
 
 type Client interface {
 	Organization() string
+	Repository() string
 }
 
 func InitClients(logger *zap.SugaredLogger, clientConfigs []config.Client) (ClientMap, error) {
@@ -24,7 +25,7 @@ func InitClients(logger *zap.SugaredLogger, clientConfigs []config.Client) (Clie
 		}
 
 		logger := logger.Named(config.Name)
-		client, err := NewGithub(logger, config.OrganizationName, config.ServerInfo, config.GithubAuthConfig)
+		client, err := NewGithub(logger, config.OrganizationName, config.RepositoryName, config.ServerInfo, config.GithubAuthConfig)
 		if err != nil {
 			return nil, err
 		}

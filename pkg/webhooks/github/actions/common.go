@@ -18,6 +18,7 @@ type WebhookActions struct {
 	logger *zap.SugaredLogger
 	ih     []*IssuesAction
 	wa     []*WorkflowAction
+	ra     []*RepoAction
 }
 
 func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.WebhookActions) (*WebhookActions, error) {
@@ -50,6 +51,12 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 				return nil, err
 			}
 			actions.wa = append(actions.wa, h)
+		case utils.ActionRepoHandler:
+			h, err := NewRepoAction(logger, c.(*clients.Github), spec.Args)
+			if err != nil {
+				return nil, err
+			}
+			actions.ra = append(actions.ra, h)
 		default:
 			return nil, fmt.Errorf(utils.ErrUnsupportedType, t)
 		}

@@ -3,13 +3,13 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/config"
 	"strings"
 
 	"github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
 
 	"github.tools.sap/actions-rollout-app/pkg/clients"
+	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/utils"
 )
 
@@ -78,7 +78,7 @@ func (i *IssuesAction) createForkIssue(ctx context.Context, p *IssueCreateParams
 		return fmt.Errorf("error creating issue: %w", err)
 	}
 
-	i.logger.Infow("issue created", "issue", issue.ID)
+	i.logger.Infow("issue created for workflow ", "issue", issue.ID, p.Title)
 
 	return nil
 }

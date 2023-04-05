@@ -1,7 +1,10 @@
 ---
+Global:
+  - workers: 10
 clients:
   - name: actions-control
     organization: mouismail-ghes
+    repository: sap-actions-control
     server_info:
       base_url: https://octodemo.com/api/v3/
       upload_url: https://octodemo.com/api/v3/uploads/
@@ -18,3 +21,7 @@ webhooks:
           repository: sap-demos
           organization: mouismail-ghes
           workflow: actions-control
+          workers: 10
+          files_path:
+            - orgs-tools
+            - orgs-wdf

@@ -3,14 +3,15 @@ package clients
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/utils"
-	"golang.org/x/oauth2"
-	"net/http"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	v3 "github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 )
 
 type Github struct {
@@ -19,18 +20,22 @@ type Github struct {
 	appID             int64
 	installationID    int64
 	organizationID    string
+	repository        string
 	installationToken string
 	atr               *ghinstallation.AppsTransport
 	itr               *ghinstallation.Transport
 	serverInfo        *config.ServerInfo
+	workers           float64
+	filesPath         *[]string
 }
 
-func NewGithub(logger *zap.SugaredLogger, organizationID string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
+func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
 	a := &Github{
 		logger:         logger,
 		keyPath:        config.PrivateKeyCertPath,
 		appID:          config.AppID,
 		organizationID: organizationID,
+		repository:     repository,
 		serverInfo:     severInfo,
 	}
 
@@ -84,6 +89,10 @@ func (a *Github) initClients() error {
 
 func (a *Github) Organization() string {
 	return a.organizationID
+}
+
+func (a *Github) Repository() string {
+	return a.repository
 }
 
 func (a *Github) GetV3Client() *v3.Client {
