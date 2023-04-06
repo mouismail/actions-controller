@@ -54,7 +54,7 @@ func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, ghwebhooks.ErrEventNotFound) {
-			w.logger.Warnw("received unregistered github event", "error", err)
+			//w.logger.Warnw("received unregistered github event", "error", err)
 			response.WriteHeader(http.StatusOK)
 		} else {
 			w.logger.Errorw("received malformed github event", "error", err)

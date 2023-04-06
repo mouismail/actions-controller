@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 	"io"
 	"net/http"
 	"sync"
@@ -30,6 +31,7 @@ type RepoAction struct {
 	validationRepository   string
 	filesPath              *[]string
 	workerPoolSize         float64
+	assignees              *[]string
 }
 
 type ValidatorData struct {
@@ -57,6 +59,7 @@ func NewRepoAction(logger *zap.SugaredLogger, client *clients.Github, rawConfig 
 		validationRepository:   validationRepository,
 		filesPath:              rawConfig["filesPath"].(*[]string),
 		workerPoolSize:         rawConfig["workers"].(float64),
+		assignees:              rawConfig["assignees"].(*[]string),
 	}, nil
 }
 
@@ -66,20 +69,19 @@ func (r *RepoAction) HandleRepo(params *RepoActionParams) error {
 	if err != nil {
 		return err
 	}
-	r.logger.Infof("Repository %s/%s is valid, validating...", params.ValidationOrganization, r.filesPath)
+	r.logger.Infof("Repository %s/%s is valid.", params.ValidationOrganization, params.ValidationRepository)
 
 	return nil
 }
 
 func (r *RepoAction) handleRepoConfig(params *RepoActionParams) error {
 	if r.filesPath == nil {
-		r.logger.Infof("No files to validate, skipping")
-		return nil
+		return errors.New("no files to validate")
 	}
 
 	r.logger.Infof("Checking paths")
 	if err := r.handleRepoConfigFile(params); err != nil {
-		r.logger.Errorf("Error validating repository: %v", err)
+		return err
 	}
 
 	return nil
@@ -111,7 +113,7 @@ func (r *RepoAction) handleRepoConfigFile(params *RepoActionParams) error {
 		go func() {
 			defer wg.Done()
 			for path := range filesCh {
-				r.logger.Infow("Checking  file %s in %s/%s", path, params.ValidationOrganization, params.ValidationRepository)
+				r.logger.Infof("Checking  file %s in %s/%s", path, params.ValidationOrganization, params.ValidationRepository)
 				// Check if content is already cached
 				mu.Lock()
 				content, ok := contentCache[r.client.Organization()+"/"+r.client.Repository()+"/"+path]
@@ -141,14 +143,13 @@ func (r *RepoAction) handleRepoConfigFile(params *RepoActionParams) error {
 
 				}
 				for _, file := range content {
-					r.logger.Infow("Processing file %s in %s/%s", file.GetName(), params.ValidationOrganization, params.ValidationRepository)
+					//r.logger.Infof("Processing file %s in %s/%s", file.GetName(), params.ValidationOrganization, params.ValidationRepository)
 					err := r.downloadRawData(params, fmt.Sprintf("%s/%s", path, file.GetName()))
 					if err != nil {
-						r.logger.Errorf("Error downloading file content: %s", err.Error())
+						//r.logger.Errorf("Error downloading file content: %s", err)
 						errCh <- err
 						continue
 					}
-					//r.HandleRepoConfigFileContent(params, contentString)
 				}
 			}
 		}()
@@ -170,7 +171,7 @@ func (r *RepoAction) handleRepoConfigFile(params *RepoActionParams) error {
 }
 
 func (r *RepoAction) downloadRawData(params *RepoActionParams, filePath string) error {
-	rawContents, resp, err := r.client.GetV3Client().Repositories.DownloadContents(
+	rawContents, _, err := r.client.GetV3Client().Repositories.DownloadContents(
 		context.Background(),
 		r.client.Organization(),
 		r.client.Repository(),
@@ -178,23 +179,19 @@ func (r *RepoAction) downloadRawData(params *RepoActionParams, filePath string) 
 		&github.RepositoryContentGetOptions{Ref: "main"},
 	)
 	if err != nil {
-		fmt.Printf("Error downloading file content: %s\n", err.Error())
+		r.logger.Errorw("Error downloading the raw content", "error", err)
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
 
-	}
 	defer rawContents.Close()
 
 	bytes, err := io.ReadAll(rawContents)
 	if err != nil {
-		r.logger.Errorw("Error reading file content", "error", err)
 		return err
 	}
 
 	err = r.handleRepoConfigFileContent(params, bytes)
 	if err != nil {
-		fmt.Printf("Error validating file content: %s\n", err.Error())
 		return err
 	}
 	return nil
@@ -202,7 +199,7 @@ func (r *RepoAction) downloadRawData(params *RepoActionParams, filePath string) 
 
 func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, content []byte) error {
 	if content == nil {
-		return errors.New("invalid params")
+		return errors.New(utils.ErrValidationEmptyContent)
 	}
 
 	var validation ValidatorData
@@ -211,22 +208,27 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 		return err
 	}
 
-	if validation.URL != "https://octodemo.com/"+params.ValidationOrganization {
-		return errors.New("invalid url")
+	if !(validation.URL == fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization)) {
+		r.logger.Warnw("Invalid URL", "URL", validation.URL, "expected", fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization))
+		return errors.New(utils.ErrInvalidConfigOrganization)
 	}
 	if validation.ContactEmail != "" {
-		return errors.New("invalid contact email")
+		r.logger.Warnw("Invalid Contact Email", "ContactEmail", validation.ContactEmail)
+		return errors.New(utils.ErrInvalidContactEmail)
 	}
 	if validation.UseCase != params.ValidationOrganization {
-		return errors.New("invalid use case")
+		r.logger.Warnw("Invalid Use Case", "UseCase", validation.UseCase, "expected", params.ValidationOrganization)
+		return errors.New(utils.ErrInvalidUseCase)
 	}
 	if len(validation.Repos) < 0 {
-		return errors.New("invalid repos")
+		r.logger.Warnw("Invalid Repos/Repo", "Repos", validation.Repos)
+		return errors.New(utils.ErrInvalidConfigRepository)
 	}
 	if len(validation.Repos) != 0 {
 		for _, repo := range validation.Repos {
 			if repo != params.ValidationRepository {
-				return errors.New("invalid repo")
+				r.logger.Warnw("Invalid Repos/Repo", "Repos", validation.Repos, "expected", params.ValidationRepository)
+				return errors.New(utils.ErrInvalidConfigRepository)
 			}
 		}
 	}

@@ -201,6 +201,7 @@ func TestNewGithub(t *testing.T) {
 	type args struct {
 		logger         *zap.SugaredLogger
 		organizationID string
+		repository     string
 		severInfo      *config.ServerInfo
 		config         *config.GithubClient
 	}
@@ -212,7 +213,7 @@ func TestNewGithub(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewGithub(tt.args.logger, tt.args.organizationID, tt.args.severInfo, tt.args.config)
+			got, err := NewGithub(tt.args.logger, tt.args.organizationID, tt.args.repository, tt.args.severInfo, tt.args.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewGithub() error = %v, wantErr %v", err, tt.wantErr)
 				return

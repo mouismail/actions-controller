@@ -47,8 +47,9 @@ type Webhook struct {
 }
 
 type ServerInfo struct {
-	BaseURL   string `json:"base_url"`
-	UploadURL string `json:"upload_url"`
+	BaseURL       string `json:"base_url"`
+	UploadURL     string `json:"upload_url"`
+	EnterpriseURL string `json:"enterprise_url"`
 }
 
 type IssueCreatedHandlerConfig struct {

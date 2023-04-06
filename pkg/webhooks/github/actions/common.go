@@ -156,7 +156,7 @@ func (w *WebhookActions) ProcessWorkflowRunEvent(payload *ghwebhooks.WorkflowRun
 	}
 }
 
-func (w *WebhookActions) ProcessIssueCreate(repo, org, title, body string) {
+func (w *WebhookActions) ProcessIssueCreate(repo, org, title, body string, assignees, labels []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
@@ -169,8 +169,8 @@ func (w *WebhookActions) ProcessIssueCreate(repo, org, title, body string) {
 				Organization:   org,
 				Title:          title,
 				Body:           body,
-				Assignees:      nil,
-				Labels:         nil,
+				Assignees:      &assignees,
+				Labels:         &labels,
 			}
 
 			err := i.CreateIssue(ctx, params)

@@ -8,8 +8,10 @@ clients:
     server_info:
       base_url: https://octodemo.com/api/v3/
       upload_url: https://octodemo.com/api/v3/uploads/
+      enterprise_url: https://octodemo.com/
     github:
       app-id: 61
+      # TODO: to be replaced as env or secret
       key-path: /Users/mouismail/GitHub/mouismail/sap-actions-control/test/actions-control.2023-03-30.private-key.pem
 webhooks:
   - serve-path: /webhook
@@ -18,10 +20,18 @@ webhooks:
       - type: workflow-handling
         client: actions-control
         args:
-          repository: sap-demos
-          organization: mouismail-ghes
-          workflow: actions-control
+          repository: sap-demos # TODO: to be removed it will be read dynamically from the workflow events
+          organization: mouismail-ghes # TODO: to be removed it will be read dynamically from the workflow events
+          workflow: actions-control # TODO: to be removed it will be read dynamically from the workflow events
           workers: 10
+          issue_assignees:
+            - mouismail
+            - stoe
+#          issue_labels:
+#            - ${{ org_name }}
+#            - ${{ repo_name }}
+#            - ${{ github.event.type }}
+#            - ${{ github.event.action }}
           files_path:
             - orgs-tools
             - orgs-wdf
