@@ -11,18 +11,14 @@ clients:
       enterprise_url: https://octodemo.com/
     github:
       app-id: 61
-      # TODO: to be replaced as env or secret
-      key-path: /Users/mouismail/GitHub/mouismail/sap-actions-control/test/actions-control.2023-03-30.private-key.pem
+      key-path: GHES_APP_PRIVATE_KEY
 webhooks:
   - serve-path: /webhook
-    secret: development
+    secret: GHES_APP_WEBHOOK_SECRET # TODO: move it to client
     actions:
       - type: workflow-handling
         client: actions-control
         args:
-          repository: sap-demos # TODO: to be removed it will be read dynamically from the workflow events
-          organization: mouismail-ghes # TODO: to be removed it will be read dynamically from the workflow events
-          workflow: actions-control # TODO: to be removed it will be read dynamically from the workflow events
           workers: 10
           issue_assignees:
             - mouismail

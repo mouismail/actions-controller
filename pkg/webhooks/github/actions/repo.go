@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/google/go-github/v50/github"
@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.tools.sap/actions-rollout-app/pkg/clients"
+	"github.tools.sap/actions-rollout-app/pkg/utils"
 )
 
 type RepoActionParams struct {
@@ -63,116 +64,128 @@ func NewRepoAction(logger *zap.SugaredLogger, client *clients.Github, rawConfig 
 	}, nil
 }
 
-func (r *RepoAction) HandleRepo(params *RepoActionParams) error {
-	r.logger.Infof("Validating repository %s/%s", params.ValidationOrganization, params.ValidationRepository)
-	err := r.handleRepoConfig(params)
+func (r *RepoAction) HandleRepo(ctx context.Context, params *RepoActionParams) error {
+	r.logger.Infof("validating repository %s/%s", params.ValidationOrganization, params.ValidationRepository)
+	err := r.handleRepoConfig(ctx, params)
 	if err != nil {
 		return err
 	}
-	r.logger.Infof("Repository %s/%s is valid.", params.ValidationOrganization, params.ValidationRepository)
-
 	return nil
 }
 
-func (r *RepoAction) handleRepoConfig(params *RepoActionParams) error {
+func (r *RepoAction) handleRepoConfig(ctx context.Context, params *RepoActionParams) error {
 	if r.filesPath == nil {
 		return errors.New("no files to validate")
 	}
 
-	r.logger.Infof("Checking paths")
-	if err := r.handleRepoConfigFile(params); err != nil {
+	r.logger.Infof("checking paths")
+	if err := r.handleRepoConfigFile(ctx, params); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *RepoAction) handleRepoConfigFile(params *RepoActionParams) error {
-	// Create a channel to receive files to process
+func (r *RepoAction) handleRepoConfigFile(ctx context.Context, params *RepoActionParams) error {
 	if params == nil || r.filesPath == nil {
 		return errors.New("invalid params")
 	}
 
 	filesCh := make(chan string, len(*r.filesPath))
 	errCh := make(chan error, len(*r.filesPath))
+	isValidCh := make(chan bool, 1)
+
 	for _, path := range *r.filesPath {
 		filesCh <- path
 	}
-	close(filesCh)
 
-	// Create a wait group to wait for all workers to finish
 	var wg sync.WaitGroup
 
-	// Create a map to cache the content of the repository files
 	contentCache := make(map[string][]*github.RepositoryContent)
 	var mu sync.Mutex // Protects access to contentCache
+	wg.Add(len(*r.filesPath))
 
-	// Start worker pool
-	for i := 0; i < int(r.workerPoolSize); i++ {
-		wg.Add(1)
-		go func() {
+	for _, path := range *r.filesPath {
+		go func(path string) {
 			defer wg.Done()
-			for path := range filesCh {
-				r.logger.Infof("Checking  file %s in %s/%s", path, params.ValidationOrganization, params.ValidationRepository)
-				// Check if content is already cached
+
+			r.logger.Infof("checking  file %s in %s/%s", path, params.ValidationOrganization, params.ValidationRepository)
+			mu.Lock()
+			content, ok := contentCache[r.client.Organization()+"/"+r.client.Repository()+"/"+path]
+			mu.Unlock()
+
+			if !ok {
+				_, dirContent, resp, err := r.client.GetV3Client().Repositories.GetContents(ctx, r.client.Organization(), r.client.Repository(), path, &github.RepositoryContentGetOptions{Ref: "main"})
+				if err != nil {
+					r.logger.Errorf("error retrieving content for %s/%d/%s: %v", params.ValidationOrganization, r.filesPath, path, err)
+					errCh <- err
+				}
+
+				if resp.StatusCode != http.StatusOK {
+					r.logger.Errorf("unexpected status code %d while retrieving content for %s/%d/%s", resp.StatusCode, params.ValidationOrganization, r.filesPath, path)
+					errCh <- err
+				}
+				content = dirContent
+
+				// Cache content
 				mu.Lock()
-				content, ok := contentCache[r.client.Organization()+"/"+r.client.Repository()+"/"+path]
+				contentCache[path] = content
 				mu.Unlock()
 
-				if !ok {
+			}
+			for _, file := range content {
+				r.logger.Infof("checking config file %s on path %s for workflow event from %s/%s", file.GetName(), path, params.ValidationOrganization, params.ValidationRepository)
 
-					// Retrieve content from GitHub API
-					_, dirContent, resp, err := r.client.GetV3Client().Repositories.GetContents(context.Background(), r.client.Organization(), r.client.Repository(), path, &github.RepositoryContentGetOptions{Ref: "main"})
-					if err != nil {
-						r.logger.Errorf("Error retrieving content for %s/%d/%s: %v", params.ValidationOrganization, r.filesPath, path, err)
-						errCh <- err
-						continue
-					}
-
-					if resp.StatusCode != http.StatusOK {
-						r.logger.Errorf("Unexpected status code %d while retrieving content for %s/%d/%s", resp.StatusCode, params.ValidationOrganization, r.filesPath, path)
-						errCh <- err
-						continue
-					}
-					content = dirContent
-
-					// Cache content
-					mu.Lock()
-					contentCache[path] = content
-					mu.Unlock()
-
+				select {
+				case <-ctx.Done():
+					return
+				default:
 				}
-				for _, file := range content {
-					//r.logger.Infof("Processing file %s in %s/%s", file.GetName(), params.ValidationOrganization, params.ValidationRepository)
-					err := r.downloadRawData(params, fmt.Sprintf("%s/%s", path, file.GetName()))
-					if err != nil {
-						//r.logger.Errorf("Error downloading file content: %s", err)
-						errCh <- err
-						continue
-					}
+
+				isValid, err := r.isValidFile(ctx, params, path, file)
+				if isValid {
+					isValidCh <- true
+					return
+				}
+				if err != nil {
+					r.logger.Infof("could not validate %s/%s for file %s/%s", params.ValidationOrganization, params.ValidationRepository, path, file.GetName())
+					continue
 				}
 			}
-		}()
+
+		}(path)
 	}
 
-	// Wait for all workers to finish
-	//wg.Wait()
 	go func() {
 		wg.Wait()
-		close(errCh) // Close error channel when all workers are done
+		select {
+		case isValid := <-isValidCh:
+			if !isValid {
+				r.logger.Infof("repository %s/%s is not valid", params.ValidationOrganization, params.ValidationRepository)
+				errCh <- fmt.Errorf("repository %s/%s is not valid", params.ValidationOrganization, params.ValidationRepository)
+				return
+			}
+		default:
+			errCh <- fmt.Errorf("no valid files found in repository %s/%s", params.ValidationOrganization, params.ValidationRepository)
+			return
+		}
+		close(errCh)
+		close(isValidCh)
+		close(filesCh)
 	}()
 
 	for err := range errCh {
 		if err != nil {
-			return err // Return the first error encountered
+			return err
 		}
 	}
+
 	return nil
 }
 
-func (r *RepoAction) downloadRawData(params *RepoActionParams, filePath string) error {
+func (r *RepoAction) downloadRawData(ctx context.Context, params *RepoActionParams, filePath string) (bool, error) {
 	rawContents, _, err := r.client.GetV3Client().Repositories.DownloadContents(
-		context.Background(),
+		ctx,
 		r.client.Organization(),
 		r.client.Repository(),
 		filePath,
@@ -180,21 +193,26 @@ func (r *RepoAction) downloadRawData(params *RepoActionParams, filePath string) 
 	)
 	if err != nil {
 		r.logger.Errorw("Error downloading the raw content", "error", err)
-		return err
+		return false, err
 	}
 
-	defer rawContents.Close()
+	defer func(rawContents io.ReadCloser) {
+		rawErr := rawContents.Close()
+		if rawErr != nil {
+			r.logger.Errorw("Error closing raw contents", "error", rawErr)
+		}
+	}(rawContents)
 
 	bytes, err := io.ReadAll(rawContents)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	err = r.handleRepoConfigFileContent(params, bytes)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return true, nil
 }
 
 func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, content []byte) error {
@@ -212,7 +230,7 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 		r.logger.Warnw("Invalid URL", "URL", validation.URL, "expected", fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization))
 		return errors.New(utils.ErrInvalidConfigOrganization)
 	}
-	if validation.ContactEmail != "" {
+	if validation.ContactEmail == "" {
 		r.logger.Warnw("Invalid Contact Email", "ContactEmail", validation.ContactEmail)
 		return errors.New(utils.ErrInvalidContactEmail)
 	}
@@ -235,4 +253,16 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 	r.logger.Infof("Repository %s/%s is valid", params.ValidationOrganization, params.ValidationRepository)
 
 	return nil
+}
+
+func (r *RepoAction) isValidFile(ctx context.Context, params *RepoActionParams, path string, file *github.RepositoryContent) (bool, error) {
+	if !r.isFileValid(file) {
+		return false, nil
+	}
+
+	return r.downloadRawData(ctx, params, fmt.Sprintf("%s/%s", path, file.GetName()))
+}
+
+func (r *RepoAction) isFileValid(file *github.RepositoryContent) bool {
+	return file.GetType() == "file" && strings.HasSuffix(file.GetName(), ".yml")
 }

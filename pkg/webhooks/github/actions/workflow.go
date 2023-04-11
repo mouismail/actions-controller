@@ -14,7 +14,8 @@ import (
 )
 
 type WorkflowActionParams struct {
-	Workflow     string
+	WorkflowName string
+	WorkflowID   int64
 	Organization string
 	Repository   string
 	WebhookEvent ghwebhooks.Event
@@ -27,7 +28,6 @@ type WorkflowAction struct {
 
 	repository     string
 	organization   string
-	workflow       string
 	workerPoolSize float64
 	filesPath      *[]string
 	assignees      *[]string
@@ -36,19 +36,6 @@ type WorkflowAction struct {
 // TODO: retest this
 
 func NewWorkflowAction(logger *zap.SugaredLogger, client *clients.Github, rawConfig map[string]any) (*WorkflowAction, error) {
-	// Validate input
-	repo, ok := rawConfig["repository"].(string)
-	if !ok {
-		return nil, errors.New("repo not found or is not a string")
-	}
-	org, ok := rawConfig["organization"].(string)
-	if !ok {
-		return nil, errors.New("org not found or is not a string")
-	}
-	workflow, ok := rawConfig["workflow"].(string)
-	if !ok {
-		return nil, errors.New("workflow not found or is not a string")
-	}
 	filesInterface, ok := rawConfig["files_path"].([]interface{})
 	if !ok {
 		return nil, errors.New("filesPath not found or is not a slice of interface{}")
@@ -61,7 +48,6 @@ func NewWorkflowAction(logger *zap.SugaredLogger, client *clients.Github, rawCon
 		}
 		files[i] = str
 	}
-
 	workers, ok := rawConfig["workers"].(float64)
 	if !ok {
 		return nil, errors.New("workers not found or is not an int")
@@ -83,9 +69,8 @@ func NewWorkflowAction(logger *zap.SugaredLogger, client *clients.Github, rawCon
 	return &WorkflowAction{
 		logger:         logger,
 		client:         client,
-		repository:     repo,
-		organization:   org,
-		workflow:       workflow,
+		repository:     client.Repository(),
+		organization:   client.Organization(),
 		filesPath:      &files,
 		workerPoolSize: workers,
 		assignees:      &assignees,
@@ -100,11 +85,6 @@ func (w *WorkflowAction) HandleWorkflow(ctx context.Context, p *WorkflowActionPa
 
 	if w.organization != p.Organization {
 		w.logger.Errorw("organization does not match", "expected", w.organization, "actual", p.Organization)
-		return nil
-	}
-
-	if w.workflow != p.Workflow {
-		w.logger.Errorw("workflow id does not match", "expected", w.workflow, "actual", p.Workflow)
 		return nil
 	}
 
@@ -127,6 +107,25 @@ func (w *WorkflowAction) HandleWorkflow(ctx context.Context, p *WorkflowActionPa
 	return nil
 }
 
+func (w *WorkflowAction) disableWorkflow(ctx context.Context, p *WorkflowActionParams, workflowFileName string) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	resp, err := w.client.GetV3Client().Actions.DisableWorkflowByFileName(ctx, p.Organization, p.Repository, workflowFileName)
+	if err != nil {
+		w.logger.Errorw("error getting workflow", "error", err)
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		w.logger.Errorw("error getting workflow", "response", resp.StatusCode)
+		return err
+	}
+
+	return nil
+}
+
 func (w *WorkflowAction) createWorkflowIssue(ctx context.Context, title, message string, assignees, labels []string) error {
 	if ctx == nil {
 		ctx = context.Background()
@@ -136,7 +135,7 @@ func (w *WorkflowAction) createWorkflowIssue(ctx context.Context, title, message
 		Title:     github.String(title),
 		Body:      github.String(message),
 		Assignees: &assignees,
-		Labels:    &[]string{w.organization, w.repository, w.workflow},
+		Labels:    &labels,
 	})
 	if err != nil {
 		w.logger.Errorw("error creating issue", "error", err)
@@ -165,28 +164,44 @@ func (w *WorkflowAction) handleWorkflowDispatch(ctx context.Context, p *Workflow
 }
 
 func (w *WorkflowAction) handleWorkflowJob(ctx context.Context, p *WorkflowActionParams) error {
-	err := w.handleWorkflowEvent(ctx, p, "job")
-	if err != nil {
-		return err
-	}
+	// TODO: to be validated with @stoe
+	//err := w.handleWorkflowEvent(ctx, p, "job")
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
 func (w *WorkflowAction) handleWorkflowEvent(ctx context.Context, p *WorkflowActionParams, eventType string) error {
-	title := fmt.Sprintf("%s/%s - %s", p.Organization, p.Repository, p.Workflow)
+	title := fmt.Sprintf("[%d] - %s/%s - [%s]", p.WorkflowID, p.Organization, p.Repository, p.WorkflowName)
 
 	var message string
 	switch eventType {
 	case "run":
-		message = fmt.Sprintf(utils.WorkflowRunMessage, p.Sender, p.Organization, p.Repository)
+		message = fmt.Sprintf(utils.WorkflowRunMessage,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
+
 	case "dispatch":
-		message = fmt.Sprintf(utils.WorkflowDispatchMessage, p.Sender, p.Organization, p.Repository)
+		message = fmt.Sprintf(utils.WorkflowDispatchMessage,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
 	case "job":
-		message = fmt.Sprintf(utils.WorkflowJobMessage, p.WebhookEvent, p.Sender, p.Organization, p.Repository)
+		message = fmt.Sprintf(utils.WorkflowJobMessage,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
 	default:
 		return errors.New("unsupported event type")
 	}
-
 	repoAction := &RepoAction{
 		logger:                 w.logger,
 		client:                 w.client,
@@ -201,9 +216,10 @@ func (w *WorkflowAction) handleWorkflowEvent(ctx context.Context, p *WorkflowAct
 		ValidationOrganization: p.Organization,
 		ValidationRepository:   p.Repository,
 	}
-	err := repoAction.HandleRepo(repoParams)
+
+	err := repoAction.HandleRepo(ctx, repoParams)
 	if err != nil {
-		return w.createWorkflowIssue(ctx, title, message, *w.assignees, nil)
+		return w.createWorkflowIssue(ctx, title, message, *w.assignees, []string{fmt.Sprintf("%s/%s", p.Organization, p.Repository), "not-valid"})
 	}
 	return nil
 }

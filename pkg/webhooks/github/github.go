@@ -3,6 +3,7 @@ package github
 import (
 	"errors"
 	"net/http"
+	"os"
 
 	"github.tools.sap/actions-rollout-app/pkg/clients"
 	"github.tools.sap/actions-rollout-app/pkg/config"
@@ -28,12 +29,13 @@ type Webhook struct {
 
 // NewGithubWebhook returns a new webhook controller
 func NewGithubWebhook(logger *zap.SugaredLogger, w config.Webhook, cs clients.ClientMap) (*Webhook, error) {
-	hook, err := ghwebhooks.New(ghwebhooks.Options.Secret(w.Secret))
+	hook, err := ghwebhooks.New(ghwebhooks.Options.Secret(os.Getenv(w.Secret)))
 	if err != nil {
 		return nil, err
 	}
 
 	a, err := actions.InitActions(logger, cs, w.Actions)
+
 	if err != nil {
 		return nil, err
 	}

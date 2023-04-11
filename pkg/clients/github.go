@@ -3,10 +3,10 @@ package clients
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"net/http"
+	"os"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	v3 "github.com/google/go-github/v50/github"
@@ -30,9 +30,10 @@ type Github struct {
 }
 
 func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
+
 	a := &Github{
 		logger:         logger,
-		keyPath:        config.PrivateKeyCertPath,
+		keyPath:        os.Getenv(config.PrivateKeyCertPath),
 		appID:          config.AppID,
 		organizationID: organizationID,
 		repository:     repository,
