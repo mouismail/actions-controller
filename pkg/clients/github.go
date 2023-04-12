@@ -3,8 +3,8 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/config"
+	"github.tools.sap/actions-rollout-app/utils"
 	"net/http"
 	"os"
 
@@ -25,8 +25,6 @@ type Github struct {
 	atr               *ghinstallation.AppsTransport
 	itr               *ghinstallation.Transport
 	serverInfo        *config.ServerInfo
-	workers           float64
-	filesPath         *[]string
 }
 
 func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
@@ -111,7 +109,7 @@ func (a *Github) GetV3Client() *v3.Client {
 func (a *Github) GetV3AppClient() *v3.Client {
 	client, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, &http.Client{Transport: a.atr})
 	if err != nil {
-		a.logger.Errorw("error creating new Enterprise Client", "error", err)
+		a.logger.Errorw("error creating new Enterprise App Client", "error", err)
 		return nil
 	}
 	return client

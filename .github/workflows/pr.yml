@@ -1,0 +1,31 @@
+name: Create Pull Request
+
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  create_pr:
+    if: github.event.label.name == 'not-vaild'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Create Branch
+        run: git checkout -b pr/issue-${{ github.event.issue.number }}-${{ github.event.label.name }}
+
+      - name: Create Pull Request
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git push -u origin pr/issue-${{ github.event.issue.number }}-${{ github.event.label.name }}
+          echo "::set-output name=branch_name::pr/issue-${{ github.event.issue.number }}-${{ github.event.label.name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Output
+        id: pr_branch_name
+        run: echo "::set-output name=branch_name::pr/issue-${{ github.event.issue.number }}-${{ github.event.label.name }}"

@@ -2,10 +2,12 @@ package actions
 
 import (
 	"context"
-	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"go.uber.org/zap"
 	"reflect"
 	"testing"
+
+	"github.tools.sap/actions-rollout-app/pkg/clients"
+
+	"go.uber.org/zap"
 )
 
 func TestNewWorkflowAction(t *testing.T) {

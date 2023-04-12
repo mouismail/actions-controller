@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"io"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/utils"
 )
 
 type RepoActionParams struct {
@@ -59,7 +60,6 @@ func NewRepoAction(logger *zap.SugaredLogger, client *clients.Github, rawConfig 
 		validationOrganization: validationOrganization,
 		validationRepository:   validationRepository,
 		filesPath:              rawConfig["filesPath"].(*[]string),
-		workerPoolSize:         rawConfig["workers"].(float64),
 		assignees:              rawConfig["assignees"].(*[]string),
 	}, nil
 }
@@ -115,19 +115,13 @@ func (r *RepoAction) handleRepoConfigFile(ctx context.Context, params *RepoActio
 			mu.Unlock()
 
 			if !ok {
-				_, dirContent, resp, err := r.client.GetV3Client().Repositories.GetContents(ctx, r.client.Organization(), r.client.Repository(), path, &github.RepositoryContentGetOptions{Ref: "main"})
+				dirContent, err := r.getContents(ctx, path)
 				if err != nil {
-					r.logger.Errorf("error retrieving content for %s/%d/%s: %v", params.ValidationOrganization, r.filesPath, path, err)
-					errCh <- err
-				}
-
-				if resp.StatusCode != http.StatusOK {
-					r.logger.Errorf("unexpected status code %d while retrieving content for %s/%d/%s", resp.StatusCode, params.ValidationOrganization, r.filesPath, path)
-					errCh <- err
+					r.logger.Infof("could not get contents for %s/%s on path %s", params.ValidationOrganization, params.ValidationRepository, path)
+					return
 				}
 				content = dirContent
 
-				// Cache content
 				mu.Lock()
 				contentCache[path] = content
 				mu.Unlock()
@@ -227,25 +221,25 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 	}
 
 	if !(validation.URL == fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization)) {
-		r.logger.Warnw("Invalid URL", "URL", validation.URL, "expected", fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization))
+		r.logger.Warnw(utils.ErrInvalidConfigOrganization, "URL", validation.URL, "expected", fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization))
 		return errors.New(utils.ErrInvalidConfigOrganization)
 	}
 	if validation.ContactEmail == "" {
-		r.logger.Warnw("Invalid Contact Email", "ContactEmail", validation.ContactEmail)
+		r.logger.Warnw(utils.ErrInvalidContactEmail, "ContactEmail", validation.ContactEmail)
 		return errors.New(utils.ErrInvalidContactEmail)
 	}
 	if validation.UseCase != params.ValidationOrganization {
-		r.logger.Warnw("Invalid Use Case", "UseCase", validation.UseCase, "expected", params.ValidationOrganization)
+		r.logger.Warnw(utils.ErrInvalidUseCase, "UseCase", validation.UseCase, "expected", params.ValidationOrganization)
 		return errors.New(utils.ErrInvalidUseCase)
 	}
 	if len(validation.Repos) < 0 {
-		r.logger.Warnw("Invalid Repos/Repo", "Repos", validation.Repos)
+		r.logger.Warnw(utils.ErrInvalidConfigRepository, "Repos", validation.Repos)
 		return errors.New(utils.ErrInvalidConfigRepository)
 	}
 	if len(validation.Repos) != 0 {
 		for _, repo := range validation.Repos {
-			if repo != params.ValidationRepository {
-				r.logger.Warnw("Invalid Repos/Repo", "Repos", validation.Repos, "expected", params.ValidationRepository)
+			if repo != fmt.Sprintf("https://octodemo.com/%s/%s", params.ValidationOrganization, params.ValidationRepository) {
+				r.logger.Warnw(utils.ErrInvalidConfigRepository, "Repos", repo, "expected", fmt.Sprintf("https://octodemo.com/%s/%s", params.ValidationOrganization, params.ValidationRepository))
 				return errors.New(utils.ErrInvalidConfigRepository)
 			}
 		}
@@ -265,4 +259,19 @@ func (r *RepoAction) isValidFile(ctx context.Context, params *RepoActionParams, 
 
 func (r *RepoAction) isFileValid(file *github.RepositoryContent) bool {
 	return file.GetType() == "file" && strings.HasSuffix(file.GetName(), ".yml")
+}
+
+func (r *RepoAction) getContents(ctx context.Context, path string) ([]*github.RepositoryContent, error) {
+	_, dirContent, resp, err := r.client.GetV3Client().Repositories.GetContents(ctx, r.client.Organization(), r.client.Repository(), path, &github.RepositoryContentGetOptions{Ref: "main"})
+	if err != nil {
+		r.logger.Errorf("Error retrieving content for %s/%d/%s: %v", r.client.Organization(), r.filesPath, path, err)
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		r.logger.Errorf("Unexpected status code %d while retrieving content for %s/%d/%s", resp.StatusCode, r.client.Organization(), r.filesPath, path)
+		return nil, err
+	}
+
+	return dirContent, nil
 }

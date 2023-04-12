@@ -2,10 +2,9 @@ package clients
 
 import (
 	"context"
+	"github.tools.sap/actions-rollout-app/config"
 	"reflect"
 	"testing"
-
-	"github.tools.sap/actions-rollout-app/pkg/config"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	v3 "github.com/google/go-github/v50/github"

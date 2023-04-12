@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"net/http"
+
+	"github.tools.sap/actions-rollout-app/utils"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
 	"github.com/google/go-github/v50/github"
@@ -48,10 +50,6 @@ func NewWorkflowAction(logger *zap.SugaredLogger, client *clients.Github, rawCon
 		}
 		files[i] = str
 	}
-	workers, ok := rawConfig["workers"].(float64)
-	if !ok {
-		return nil, errors.New("workers not found or is not an int")
-	}
 	assigneesInterface, ok := rawConfig["issue_assignees"].([]interface{})
 	if !ok {
 		return nil, errors.New("assignees not found or is not a slice of interface{}")
@@ -67,13 +65,12 @@ func NewWorkflowAction(logger *zap.SugaredLogger, client *clients.Github, rawCon
 
 	// Create WorkflowAction object using struct initialization
 	return &WorkflowAction{
-		logger:         logger,
-		client:         client,
-		repository:     client.Repository(),
-		organization:   client.Organization(),
-		filesPath:      &files,
-		workerPoolSize: workers,
-		assignees:      &assignees,
+		logger:       logger,
+		client:       client,
+		repository:   client.Repository(),
+		organization: client.Organization(),
+		filesPath:    &files,
+		assignees:    &assignees,
 	}, nil
 }
 
@@ -107,19 +104,17 @@ func (w *WorkflowAction) HandleWorkflow(ctx context.Context, p *WorkflowActionPa
 	return nil
 }
 
-func (w *WorkflowAction) disableWorkflow(ctx context.Context, p *WorkflowActionParams, workflowFileName string) error {
+func (w *WorkflowAction) disableWorkflow(ctx context.Context, p *WorkflowActionParams, workflowID int64) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	resp, err := w.client.GetV3Client().Actions.DisableWorkflowByFileName(ctx, p.Organization, p.Repository, workflowFileName)
+	resp, err := w.client.GetV3Client().Actions.DisableWorkflowByID(context.TODO(), p.Organization, p.Repository, workflowID)
 	if err != nil {
-		w.logger.Errorw("error getting workflow", "error", err)
 		return err
 	}
 
-	if resp.StatusCode != 200 {
-		w.logger.Errorw("error getting workflow", "response", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
 		return err
 	}
 
@@ -173,35 +168,13 @@ func (w *WorkflowAction) handleWorkflowJob(ctx context.Context, p *WorkflowActio
 }
 
 func (w *WorkflowAction) handleWorkflowEvent(ctx context.Context, p *WorkflowActionParams, eventType string) error {
-	title := fmt.Sprintf("[%d] - %s/%s - [%s]", p.WorkflowID, p.Organization, p.Repository, p.WorkflowName)
+	title := fmt.Sprintf("[%d] - %s/%s", p.WorkflowID, p.Organization, p.Repository)
+	message, err := w.generateWorkflowMessage(eventType, p)
 
-	var message string
-	switch eventType {
-	case "run":
-		message = fmt.Sprintf(utils.WorkflowRunMessage,
-			p.Sender,
-			p.Organization,
-			p.Repository,
-			p.WorkflowName,
-			p.WorkflowID)
-
-	case "dispatch":
-		message = fmt.Sprintf(utils.WorkflowDispatchMessage,
-			p.Sender,
-			p.Organization,
-			p.Repository,
-			p.WorkflowName,
-			p.WorkflowID)
-	case "job":
-		message = fmt.Sprintf(utils.WorkflowJobMessage,
-			p.Sender,
-			p.Organization,
-			p.Repository,
-			p.WorkflowName,
-			p.WorkflowID)
-	default:
-		return errors.New("unsupported event type")
+	if err != nil {
+		return err
 	}
+
 	repoAction := &RepoAction{
 		logger:                 w.logger,
 		client:                 w.client,
@@ -217,9 +190,56 @@ func (w *WorkflowAction) handleWorkflowEvent(ctx context.Context, p *WorkflowAct
 		ValidationRepository:   p.Repository,
 	}
 
-	err := repoAction.HandleRepo(ctx, repoParams)
+	err = repoAction.HandleRepo(ctx, repoParams)
 	if err != nil {
+		//disableErr := w.disableWorkflow(ctx, p, p.WorkflowID)
+		//if disableErr != nil {
+		//	return disableErr
+		//}
 		return w.createWorkflowIssue(ctx, title, message, *w.assignees, []string{fmt.Sprintf("%s/%s", p.Organization, p.Repository), "not-valid"})
 	}
 	return nil
+}
+
+func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowActionParams) (string, error) {
+	var message string
+	switch eventType {
+	case "run":
+		message = fmt.Sprintf(utils.WorkflowRunMessage,
+			p.Organization,
+			p.Repository,
+			p.Organization,
+			p.Repository,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
+
+	case "dispatch":
+		message = fmt.Sprintf(utils.WorkflowDispatchMessage,
+			p.Organization,
+			p.Repository,
+			p.Organization,
+			p.Repository,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
+	case "job":
+		message = fmt.Sprintf(utils.WorkflowJobMessage,
+			p.Organization,
+			p.Repository,
+			p.Organization,
+			p.Repository,
+			p.Sender,
+			p.Organization,
+			p.Repository,
+			p.WorkflowName,
+			p.WorkflowID)
+	default:
+		return "", errors.New("unsupported event type")
+	}
+	return message, nil
 }

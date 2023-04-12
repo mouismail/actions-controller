@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/webhooks/github/actions"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"

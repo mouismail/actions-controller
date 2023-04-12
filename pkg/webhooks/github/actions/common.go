@@ -3,11 +3,11 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/config"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
+	"github.tools.sap/actions-rollout-app/pkg/clients"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )

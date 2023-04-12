@@ -2,9 +2,8 @@ package clients
 
 import (
 	"fmt"
-
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/config"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	"go.uber.org/zap"
 )

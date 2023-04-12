@@ -1,8 +1,8 @@
 package webhooks
 
 import (
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
 	"go.uber.org/zap"
 	"testing"
 )

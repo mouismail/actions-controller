@@ -1,6 +1,4 @@
 ---
-Global:
-  - workers: 10
 clients:
   - name: actions-control
     organization: mouismail-ghes
@@ -19,7 +17,6 @@ webhooks:
       - type: workflow-handling
         client: actions-control
         args:
-          workers: 10
           issue_assignees:
             - mouismail
             - stoe

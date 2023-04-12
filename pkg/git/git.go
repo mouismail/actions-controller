@@ -4,14 +4,13 @@ package git
 
 import (
 	"fmt"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/storage/memory"
-
-	"github.tools.sap/actions-rollout-app/pkg/utils"
 )
 
 var NoChangesError = fmt.Errorf("no changes")

@@ -41,7 +41,7 @@ spec:
       enableServiceLinks: False
       containers:
         - name: sap-actions-controller
-          image: metalstack/sap-actions-controller:latest
+          image: gcr.io/sap-actions-controller:latest
           imagePullPolicy: Always
           env:
             - name: BIND_ADDR
@@ -92,7 +92,7 @@ metadata:
     app: sap-actions-controller
 spec:
   rules:
-    - host: bot.metal-pod.dev
+    - host: bot.sap-actions-controller-pod.dev
       http:
         paths:
           - backend:
