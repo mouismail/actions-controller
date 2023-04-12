@@ -3,8 +3,8 @@ package webhooks
 import (
 	"net/http"
 
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/webhooks/github"
 
 	"go.uber.org/zap"

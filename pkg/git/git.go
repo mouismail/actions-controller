@@ -4,14 +4,13 @@ package git
 
 import (
 	"fmt"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/storage/memory"
-
-	"github.tools.sap/actions-rollout-app/pkg/utils"
 )
 
 var NoChangesError = fmt.Errorf("no changes")
@@ -64,21 +63,3 @@ func DeleteBranch(repoURL, branch string) error {
 
 	return nil
 }
-
-//func ReadConfigFile(repoURL, branch string) error {
-//	r, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
-//		URL:   repoURL,
-//		Depth: 1,
-//	})
-//	if err != nil {
-//		return fmt.Errorf("error cloning git repo %w", err)
-//	}
-//
-//	_, err = r.Worktree()
-//
-//	if err != nil {
-//		return fmt.Errorf("error checking out branch %w", err)
-//	}
-//
-//	return nil
-//}

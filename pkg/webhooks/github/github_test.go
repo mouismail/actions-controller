@@ -2,8 +2,8 @@ package github
 
 import (
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
 	"github.tools.sap/actions-rollout-app/pkg/webhooks/github/actions"
 	"go.uber.org/zap"
 	"net/http"

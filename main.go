@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
 	"github.tools.sap/actions-rollout-app/pkg/webhooks"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	"github.com/go-playground/validator"
 	"github.com/spf13/cobra"
@@ -31,9 +31,6 @@ var (
 	globalConfig *config.Configuration
 )
 
-// Opts is required in order to have proper validation for args from cobra and viper.
-// this is because MarkFlagRequired from cobra does not work well with viper, see:
-// https://github.com/spf13/viper/issues/397
 type Opts struct {
 	BindAddr string
 	Port     int
@@ -41,7 +38,7 @@ type Opts struct {
 
 var cmd = &cobra.Command{
 	Use:          moduleName,
-	Short:        "a bot helping with automating tasks on github and gitlab",
+	Short:        "a bot helping with automating tasks on github",
 	Version:      utils.V.String(),
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {

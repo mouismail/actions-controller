@@ -2,19 +2,29 @@
 clients:
   - name: actions-control
     organization: mouismail-ghes
+    repository: sap-actions-control
     server_info:
       base_url: https://octodemo.com/api/v3/
       upload_url: https://octodemo.com/api/v3/uploads/
+      enterprise_url: https://octodemo.com/
     github:
       app-id: 61
-      key-path: /Users/mouismail/GitHub/mouismail/sap-actions-control/test/actions-control.2023-03-30.private-key.pem
+      key-path: GHES_APP_PRIVATE_KEY
 webhooks:
   - serve-path: /webhook
-    secret: development
+    secret: GHES_APP_WEBHOOK_SECRET # TODO: move it to client
     actions:
       - type: workflow-handling
         client: actions-control
         args:
-          repository: sap-demos
-          organization: mouismail-ghes
-          workflow: actions-control
+          issue_assignees:
+            - mouismail
+            - stoe
+#          issue_labels:
+#            - ${{ org_name }}
+#            - ${{ repo_name }}
+#            - ${{ github.event.type }}
+#            - ${{ github.event.action }}
+          files_path:
+            - orgs-tools
+            - orgs-wdf

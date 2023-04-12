@@ -4,14 +4,12 @@ go 1.19
 
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/webhooks/v6 v6.0.1
-	github.com/google/go-github/v50 v50.2.0
-	github.com/mitchellh/mapstructure v1.5.0
-	github.com/spf13/cobra v1.7.0
+	github.com/google/go-github/v50 v50.1.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/oauth2 v0.6.0
@@ -40,7 +38,8 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect

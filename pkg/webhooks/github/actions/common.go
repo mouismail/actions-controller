@@ -3,21 +3,19 @@ package actions
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	"github.tools.sap/actions-rollout-app/pkg/clients"
-	"github.tools.sap/actions-rollout-app/pkg/config"
-	"github.tools.sap/actions-rollout-app/pkg/utils"
+	"github.tools.sap/actions-rollout-app/config"
+	"github.tools.sap/actions-rollout-app/utils"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
+	"github.tools.sap/actions-rollout-app/pkg/clients"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
 type WebhookActions struct {
-	logger *zap.SugaredLogger
-	ih     []*IssuesAction
-	wa     []*WorkflowAction
+	logger          *zap.SugaredLogger
+	workflowActions []*WorkflowAction
+	repoActions     []*RepoAction
 }
 
 func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.WebhookActions) (*WebhookActions, error) {
@@ -38,23 +36,29 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 		}
 
 		switch t := spec.Type; t {
-		case utils.ActionIssuesHandler:
-			h, err := NewIssuesAction(logger, c.(*clients.Github))
-			if err != nil {
-				return nil, err
-			}
-			actions.ih = append(actions.ih, h)
+		//case utils.ActionIssuesHandler:
+		//	h, err := NewIssuesAction(logger, c.(*clients.Github))
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	actions.issueActions = append(actions.issueActions, h)
 		case utils.ActionWorkflowHandler:
 			h, err := NewWorkflowAction(logger, c.(*clients.Github), spec.Args)
 			if err != nil {
 				return nil, err
 			}
-			actions.wa = append(actions.wa, h)
+			actions.workflowActions = append(actions.workflowActions, h)
+		case utils.ActionRepoHandler:
+			h, err := NewRepoAction(logger, c.(*clients.Github), spec.Args)
+			if err != nil {
+				return nil, err
+			}
+			actions.repoActions = append(actions.repoActions, h)
 		default:
 			return nil, fmt.Errorf(utils.ErrUnsupportedType, t)
 		}
 
-		logger.Debugw("initialized github webhook action", "name", spec.Type)
+		logger.Debugw(utils.LoggerDebugInitWebhookAction, "name", spec.Type)
 	}
 
 	return &actions, nil
@@ -63,22 +67,22 @@ func InitActions(logger *zap.SugaredLogger, cs clients.ClientMap, config config.
 func (w *WebhookActions) ProcessWorkflowDispatchEvent(payload *ghwebhooks.WorkflowDispatchPayload) {
 	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	group, ctx := errgroup.WithContext(ctx)
 
-	for _, wa := range w.wa {
+	for _, wa := range w.workflowActions {
 		wa := wa
-		g.Go(func() error {
+		group.Go(func() error {
 			params := &WorkflowActionParams{
 				Repository:   payload.Repository.Name,
 				Organization: payload.Organization.Login,
-				// TODO: we need to get the run ID from the workflow dispatch event
-				Workflow:     payload.Workflow,
+				WorkflowName: payload.Workflow,
+				WorkflowID:   0,
 				WebhookEvent: ghwebhooks.WorkflowDispatchEvent,
 			}
 
 			err := wa.handleWorkflowDispatch(ctx, params)
 			if err != nil {
-				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				w.logger.Errorw(utils.LoggerErrorCreatingWorkflowDispatch, "source-repo", params.Repository, "error", err)
 				return err
 			}
 
@@ -86,57 +90,61 @@ func (w *WebhookActions) ProcessWorkflowDispatchEvent(payload *ghwebhooks.Workfl
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		w.logger.Errorw("errors processing event", "error", err)
+	if err := group.Wait(); err != nil {
+		w.logger.Errorw(utils.LoggerErrorProcessingEvent, "error", err)
 	}
 }
 
 func (w *WebhookActions) ProcessWorkflowJobEvent(payload *ghwebhooks.WorkflowJobPayload) {
 	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	group, ctx := errgroup.WithContext(ctx)
 
-	for _, wa := range w.wa {
+	for _, wa := range w.workflowActions {
 		wa := wa
-		g.Go(func() error {
+		group.Go(func() error {
 			params := &WorkflowActionParams{
 				Repository:   payload.Repository.Name,
 				Organization: payload.Organization.Login,
-				Workflow:     payload.WorkflowJob.Name,
+				WorkflowName: payload.WorkflowJob.Name,
+				WorkflowID:   payload.WorkflowJob.ID,
 				WebhookEvent: ghwebhooks.WorkflowDispatchEvent,
+				Sender:       payload.Sender.Login,
 			}
 			err := wa.handleWorkflowJob(ctx, params)
 			if err != nil {
-				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				w.logger.Errorw(utils.LoggerErrorCreatingWorkflowJob, "source-repo", params.Repository, "error", err)
 				return err
 			}
 			return nil
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		w.logger.Errorw("errors processing event", "error", err)
+	if err := group.Wait(); err != nil {
+		w.logger.Errorw(utils.LoggerErrorProcessingEvent, "error", err)
 	}
 }
 
 func (w *WebhookActions) ProcessWorkflowRunEvent(payload *ghwebhooks.WorkflowRunPayload) {
 	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	group, ctx := errgroup.WithContext(ctx)
 
-	for _, wa := range w.wa {
+	for _, wa := range w.workflowActions {
 		wa := wa
-		g.Go(func() error {
+		group.Go(func() error {
 			params := &WorkflowActionParams{
 				Repository:   payload.Repository.Name,
 				Organization: payload.Organization.Login,
-				Workflow:     payload.Workflow.Name,
+				WorkflowName: payload.Workflow.Name,
+				WorkflowID:   payload.Workflow.ID,
 				WebhookEvent: ghwebhooks.WorkflowRunEvent,
+				Sender:       payload.Sender.Login,
 			}
 
 			err := wa.handleWorkflowRun(ctx, params)
 			if err != nil {
-				w.logger.Errorw("error in workflow dispatch handler action", "source-repo", params.Repository, "error", err)
+				w.logger.Errorw(utils.LoggerErrorCreatingWorkflowRun, "source-repo", params.Repository, "error", err)
 				return err
 			}
 
@@ -144,43 +152,7 @@ func (w *WebhookActions) ProcessWorkflowRunEvent(payload *ghwebhooks.WorkflowRun
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		w.logger.Errorw("errors processing event", "error", err)
+	if err := group.Wait(); err != nil {
+		w.logger.Errorw(utils.LoggerErrorProcessingEvent, "error", err)
 	}
-}
-
-func (w *WebhookActions) ProcessIssueCreate(repo, org, title, body string) {
-	ctx, cancel := context.WithTimeout(context.Background(), utils.WebhookHandleTimeout)
-	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
-
-	for _, i := range w.ih {
-		i := i
-		g.Go(func() error {
-			params := &IssueCreateParams{
-				RepositoryName: repo,
-				Organization:   org,
-				Title:          title,
-				Body:           body,
-				Assignees:      nil,
-				Labels:         nil,
-			}
-
-			err := i.CreateIssue(ctx, params)
-			if err != nil {
-				w.logger.Errorw("error in issue comment handler action", "source-repo", params.RepositoryName, "error", err)
-				return err
-			}
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		w.logger.Errorw("errors processing event", "error", err)
-	}
-}
-
-func extractTag(payload *ghwebhooks.PushPayload) string {
-	return strings.Replace(payload.Ref, "refs/tags/", "", 1)
 }
