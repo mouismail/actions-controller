@@ -3,8 +3,6 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.tools.sap/actions-rollout-app/config"
-	"github.tools.sap/actions-rollout-app/utils"
 	"net/http"
 	"os"
 
@@ -12,6 +10,9 @@ import (
 	v3 "github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
+
+	"github.tools.sap/actions-rollout-app/config"
+	"github.tools.sap/actions-rollout-app/utils"
 )
 
 type Github struct {
@@ -27,11 +28,21 @@ type Github struct {
 	serverInfo        *config.ServerInfo
 }
 
-func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
+func (a *Github) GetConfig() *config.GithubClient {
+	return &config.GithubClient{
+		PrivateKeyCertPath: a.keyPath,
+		AppID:              a.appID,
+	}
+}
 
+func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, severInfo *config.ServerInfo, config *config.GithubClient) (*Github, error) {
+	privateKey := os.Getenv(config.PrivateKeyCertPath)
+	if privateKey == "" {
+		privateKey = config.PrivateKeyCertPath
+	}
 	a := &Github{
 		logger:         logger,
-		keyPath:        os.Getenv(config.PrivateKeyCertPath),
+		keyPath:        privateKey,
 		appID:          config.AppID,
 		organizationID: organizationID,
 		repository:     repository,
@@ -49,10 +60,12 @@ func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, sev
 func (a *Github) initClients() error {
 	ctx := context.Background()
 	atr, err := ghinstallation.NewAppsTransportKeyFromFile(http.DefaultTransport, a.appID, a.keyPath)
-	atr.BaseURL = a.serverInfo.BaseURL
+
 	if err != nil {
 		return fmt.Errorf(utils.ErrMissingClient, err)
 	}
+
+	atr.BaseURL = a.serverInfo.BaseURL
 
 	enterpriseClient, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, &http.Client{Transport: atr})
 	if err != nil {
@@ -65,8 +78,10 @@ func (a *Github) initClients() error {
 	}
 
 	a.installationID = installation.GetID()
+	a.logger.Infow("found installation id", "installation-id", a.installationID)
 
 	installationToken, _, err := enterpriseClient.Apps.CreateInstallationToken(ctx, a.installationID, nil)
+
 	if err != nil {
 		return fmt.Errorf(utils.ErrCreatingInstallationToken, err)
 	}
@@ -94,6 +109,10 @@ func (a *Github) Repository() string {
 	return a.repository
 }
 
+func (a *Github) ServerInfo() *config.ServerInfo {
+	return a.serverInfo
+}
+
 func (a *Github) GetV3Client() *v3.Client {
 	ctx := context.Background()
 	newClient, err := v3.NewEnterpriseClient(a.serverInfo.BaseURL, a.serverInfo.UploadURL, oauth2.NewClient(ctx, oauth2.StaticTokenSource(
@@ -113,12 +132,4 @@ func (a *Github) GetV3AppClient() *v3.Client {
 		return nil
 	}
 	return client
-}
-
-func (a *Github) GitToken(ctx context.Context) (string, error) {
-	t, _, err := a.GetV3AppClient().Apps.CreateInstallationToken(ctx, a.installationID, &v3.InstallationTokenOptions{})
-	if err != nil {
-		return "", fmt.Errorf("error creating installation token %w", err)
-	}
-	return t.GetToken(), nil
 }

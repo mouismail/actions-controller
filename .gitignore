@@ -1,5 +1,6 @@
 .env
 *.pem
+keys/
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,intellij+all,linux,macos,vim,windows
@@ -16,7 +17,7 @@
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test binary, built with `go keys -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE

@@ -5,14 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-	"github.tools.sap/actions-rollout-app/utils"
+	"strconv"
 
 	ghwebhooks "github.com/go-playground/webhooks/v6/github"
 	"github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
 
+	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/pkg/clients"
+	"github.tools.sap/actions-rollout-app/utils"
 )
 
 type WorkflowActionParams struct {
@@ -105,17 +106,28 @@ func (w *WorkflowAction) HandleWorkflow(ctx context.Context, p *WorkflowActionPa
 }
 
 func (w *WorkflowAction) disableWorkflow(ctx context.Context, p *WorkflowActionParams, workflowID int64) error {
-	if ctx == nil {
-		ctx = context.Background()
+	c := config.Client{
+		GithubAuthConfig: w.client.GetConfig(),
+		Name:             "disable-workflow",
+		OrganizationName: p.Organization,
+		RepositoryName:   p.Repository,
+		ServerInfo:       w.client.ServerInfo(),
 	}
-
-	resp, err := w.client.GetV3Client().Actions.DisableWorkflowByID(context.TODO(), p.Organization, p.Repository, workflowID)
+	configClients := []config.Client{c}
+	workflowClients, err := clients.InitClients(w.logger, configClients)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return err
+	for _, workflowClient := range workflowClients {
+		resp, workflowErr := workflowClient.GetV3Client().Actions.DisableWorkflowByID(ctx, p.Organization, p.Repository, workflowID)
+		if workflowErr != nil {
+			return workflowErr
+		}
+
+		if resp.StatusCode != http.StatusNoContent {
+			return errors.New(strconv.Itoa(resp.StatusCode))
+		}
 	}
 
 	return nil
@@ -192,10 +204,12 @@ func (w *WorkflowAction) handleWorkflowEvent(ctx context.Context, p *WorkflowAct
 
 	err = repoAction.HandleRepo(ctx, repoParams)
 	if err != nil {
-		//disableErr := w.disableWorkflow(ctx, p, p.WorkflowID)
-		//if disableErr != nil {
-		//	return disableErr
-		//}
+
+		disableErr := w.disableWorkflow(ctx, p, p.WorkflowID)
+		if disableErr != nil {
+			return disableErr
+		}
+		w.logger.Infow("workflow disabled", "workflow_id", p.WorkflowID)
 		return w.createWorkflowIssue(ctx, title, message, *w.assignees, []string{fmt.Sprintf("%s/%s", p.Organization, p.Repository), "not-valid"})
 	}
 	return nil
@@ -208,6 +222,7 @@ func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowAc
 		message = fmt.Sprintf(utils.WorkflowRunMessage,
 			p.Organization,
 			p.Repository,
+			w.client.ServerInfo().EnterpriseURL,
 			p.Organization,
 			p.Repository,
 			p.Sender,
@@ -220,6 +235,7 @@ func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowAc
 		message = fmt.Sprintf(utils.WorkflowDispatchMessage,
 			p.Organization,
 			p.Repository,
+			w.client.ServerInfo().EnterpriseURL,
 			p.Organization,
 			p.Repository,
 			p.Sender,
@@ -231,6 +247,7 @@ func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowAc
 		message = fmt.Sprintf(utils.WorkflowJobMessage,
 			p.Organization,
 			p.Repository,
+			w.client.ServerInfo().EnterpriseURL,
 			p.Organization,
 			p.Repository,
 			p.Sender,
@@ -242,4 +259,64 @@ func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowAc
 		return "", errors.New("unsupported event type")
 	}
 	return message, nil
+}
+
+func (w *WorkflowAction) disableWorkflowByOrganization(ctx context.Context, p *WorkflowActionParams, repoID int64) error {
+	enabledRepositories := "none"
+
+	c := config.Client{
+		GithubAuthConfig: w.client.GetConfig(),
+		Name:             "disable-workflow",
+		OrganizationName: p.Organization,
+		RepositoryName:   p.Repository,
+		ServerInfo:       w.client.ServerInfo(),
+	}
+	configClients := []config.Client{c}
+	workflowClients, err := clients.InitClients(w.logger, configClients)
+	if err != nil {
+		return err
+	}
+
+	for _, workflowClient := range workflowClients {
+		_, resp, workflowErr := workflowClient.GetV3Client().Organizations.EditActionsPermissions(ctx, p.Organization, github.ActionsPermissions{
+			EnabledRepositories: &enabledRepositories,
+		})
+		if workflowErr != nil {
+			return workflowErr
+		}
+
+		if resp.StatusCode != http.StatusNoContent {
+			return errors.New(strconv.Itoa(resp.StatusCode))
+		}
+	}
+
+	return nil
+}
+
+func (w *WorkflowAction) disableWorkflowForRepo(ctx context.Context, p *WorkflowActionParams, repoID int64) error {
+	c := config.Client{
+		GithubAuthConfig: w.client.GetConfig(),
+		Name:             "disable-workflow",
+		OrganizationName: p.Organization,
+		RepositoryName:   p.Repository,
+		ServerInfo:       w.client.ServerInfo(),
+	}
+	configClients := []config.Client{c}
+	workflowClients, err := clients.InitClients(w.logger, configClients)
+	if err != nil {
+		return err
+	}
+
+	for _, workflowClient := range workflowClients {
+		resp, workflowErr := workflowClient.GetV3Client().Actions.RemoveEnabledRepoInOrg(ctx, p.Organization, repoID)
+		if workflowErr != nil {
+			return workflowErr
+		}
+
+		if resp.StatusCode != http.StatusNoContent {
+			return errors.New(strconv.Itoa(resp.StatusCode))
+		}
+	}
+
+	return nil
 }

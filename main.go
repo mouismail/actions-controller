@@ -109,6 +109,8 @@ func initConfig() error {
 		viper.SetConfigName(moduleName + "." + cfgFileType)
 		viper.AddConfigPath("/etc/" + moduleName)
 		viper.AddConfigPath("$HOME/." + moduleName)
+		viper.AddConfigPath("/app/" + moduleName)
+		viper.AddConfigPath("/app")
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
 			usedCfg := viper.ConfigFileUsed()
@@ -117,7 +119,7 @@ func initConfig() error {
 			}
 		}
 	}
-
+	fmt.Sprintln("viper config file", viper.ConfigFileUsed())
 	err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("error occurred loading config: %w", err)

@@ -210,6 +210,7 @@ func (r *RepoAction) downloadRawData(ctx context.Context, params *RepoActionPara
 }
 
 func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, content []byte) error {
+	// TODO: replace
 	if content == nil {
 		return errors.New(utils.ErrValidationEmptyContent)
 	}
@@ -220,17 +221,17 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 		return err
 	}
 
-	if !(validation.URL == fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization)) {
-		r.logger.Warnw(utils.ErrInvalidConfigOrganization, "URL", validation.URL, "expected", fmt.Sprintf("https://octodemo.com/%s", params.ValidationOrganization))
-		return errors.New(utils.ErrInvalidConfigOrganization)
+	if !(validation.URL == fmt.Sprintf("%s/%s", r.client.ServerInfo().EnterpriseURL, params.ValidationOrganization)) {
+		r.logger.Warnw(utils.ErrInvalidConfigOrganization, "URL", validation.URL, "expected", fmt.Sprintf("%s/%s", r.client.ServerInfo().EnterpriseURL, params.ValidationOrganization))
+		return fmt.Errorf("%s: %s", utils.ErrInvalidConfigOrganization, validation.URL)
 	}
 	if validation.ContactEmail == "" {
 		r.logger.Warnw(utils.ErrInvalidContactEmail, "ContactEmail", validation.ContactEmail)
-		return errors.New(utils.ErrInvalidContactEmail)
+		return fmt.Errorf("%s: %s", utils.ErrInvalidContactEmail, validation.ContactEmail)
 	}
 	if validation.UseCase != params.ValidationOrganization {
 		r.logger.Warnw(utils.ErrInvalidUseCase, "UseCase", validation.UseCase, "expected", params.ValidationOrganization)
-		return errors.New(utils.ErrInvalidUseCase)
+		return fmt.Errorf("%s: %s", utils.ErrInvalidUseCase, validation.UseCase)
 	}
 	if len(validation.Repos) < 0 {
 		r.logger.Warnw(utils.ErrInvalidConfigRepository, "Repos", validation.Repos)
@@ -238,9 +239,9 @@ func (r *RepoAction) handleRepoConfigFileContent(params *RepoActionParams, conte
 	}
 	if len(validation.Repos) != 0 {
 		for _, repo := range validation.Repos {
-			if repo != fmt.Sprintf("https://octodemo.com/%s/%s", params.ValidationOrganization, params.ValidationRepository) {
-				r.logger.Warnw(utils.ErrInvalidConfigRepository, "Repos", repo, "expected", fmt.Sprintf("https://octodemo.com/%s/%s", params.ValidationOrganization, params.ValidationRepository))
-				return errors.New(utils.ErrInvalidConfigRepository)
+			if repo != fmt.Sprintf("%s/%s/%s", r.client.ServerInfo().EnterpriseURL, params.ValidationOrganization, params.ValidationRepository) {
+				r.logger.Warnw(utils.ErrInvalidConfigRepository, "Repos", repo, "expected", fmt.Sprintf("%s/%s/%s", r.client.ServerInfo().EnterpriseURL, params.ValidationOrganization, params.ValidationRepository))
+				return fmt.Errorf("%s: %s", utils.ErrInvalidConfigRepository, repo)
 			}
 		}
 	}
@@ -274,4 +275,8 @@ func (r *RepoAction) getContents(ctx context.Context, path string) ([]*github.Re
 	}
 
 	return dirContent, nil
+}
+
+func (r *RepoAction) GetDisableType() (string, error) {
+	return "", nil
 }
