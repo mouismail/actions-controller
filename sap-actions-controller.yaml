@@ -6,7 +6,7 @@ clients:
     server_info:
       base_url: https://octodemo.com/api/v3/
       upload_url: https://octodemo.com/api/v3/uploads/
-      enterprise_url: https://octodemo.com/
+      enterprise_url: https://octodemo.com
     github:
       app-id: 61
       key-path: GHES_APP_PRIVATE_KEY

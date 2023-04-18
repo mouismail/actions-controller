@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+
 	"github.tools.sap/actions-rollout-app/config"
 	"github.tools.sap/actions-rollout-app/utils"
 

@@ -1,0 +1,30 @@
+# .dockerignore
+
+# Ignore editor files and directories
+.vscode/
+*.code-workspace
+*.sublime*
+*.idea*
+*.iml
+*.ipr
+*.iws
+
+# Ignore build artifacts
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# Ignore Go keys and coverage files
+*.test
+*.test.go
+*.cover
+*.coverprofile
+
+# Ignore Go binary files
+*.go~
+*.exe
+
+# Ignore vendored dependencies
+vendor/

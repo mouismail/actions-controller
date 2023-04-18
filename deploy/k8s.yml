@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -10,9 +9,45 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: sap-actions-controller-secret
-stringData:
+data:
+  GHES_APP_WEBHOOK_SECRET: development
+  GHES_APP_PRIVATE_KEY: /app/keys/key.pem
   key.pem: |
-    <your private github app secret>
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVB
+    czVuUENkWWtyNmE2RU9BU2pmdnRCZzVjQ0g4aWx6NllVR1MwR2lEazRkWlR5c01T
+    Clk0OC9rRUYweVRNNklQbmNsVGVDeHduM1QvLzQwUnJFcXg2Q3gwZ3M5bXdDQjlL
+    NUswTFJvYkZ3YWVNaC9kM20KVFJvWFU1TkI1NUNvTXpMQW5sa2VrRE54SWRNeElW
+    b090b2RVcGE2aE96c0VxcG5XR25uN2lyRnZ6NlNzdTNrdgpBUlRpc2xFa0dwbElk
+    dXpZdjNNVFN6SlFqekhucW8vL1V5TEdHcCtUMW54Vi9VSjExcFNoWjNYK0h3RGxq
+    MWttCnpuelkyK0JPRzUyOGgvVzlKTmxib0Y4YUJQcEwrUkVGazY0WkdyODJCd0NE
+    MllxZEdjcHNHY3phYmpFdFp2MVMKakpnMHFTOEZGR05KMUlRa2ZhN1BTWFZrMXlq
+    QlNTZXFNOExXOHdJREFRQUJBb0lCQVFDZUFDY0MrVkJHOHY5bgp6eWlqbmtqVDlo
+    Z0RKWTJSenZDQ2NVVjhZd25Zb0F3UktmSG9nbUlpRDJPbGlacU8zaUd2YUNsMTN3
+    K2lZb2RMCnRpZmtmckFBano5Mi9tZis1K1FjNmVpd1BnQ3VOckoxdXh4YklpUDVV
+    Mmc4UnFlaWV2aTNsYUZzck1UUFJCTkoKeXdkOGpxdnFJaW9YaUlFL2NKekpxQnlo
+    MUIyUVprelR3aU5vTzB2bnF1NDVidXpHeWZrdkNKaTNXMEE4aXZvbQpXUFJ3Sytr
+    OW5lSEdoTEw2WVFYN0xTenk2MUhUMld4VUpDVi9YSGJoVEI0ZWt3UzNaVEkrY2Rl
+    cDRBQnppRFlzCnNoVFZlamdpbk1JZkN5dmk4WWdBK3RXVjFoQTNDbUlFTmdtUzFz
+    T2Ryd3k5bmlibjdZSVpLUkgzUTBNSmdsRTcKR00vYXVRWmhBb0dCQU91MGtMVSta
+    bjlVY1pPZms4THdSTnFIb1pkM005S0I1emxMK1U1U3VZUmJrRmdPbVkyVAplRGJQ
+    dzlqeGM5andHZXlvenc0b2VkSEMySFVobHRLb1g2ZFk5MTJUdFV6UnJJeVJHNDht
+    WDdQbGgzRjhQbXlYCm9WM05nRGpVVDM3eWtsd0lCNVlSdjIyVzRQUHlJY3U5TGNQ
+    b3RrREtLQktCdTIvcGQxbElHbzVSQW9HQkFNTVEKbFY0WnpjUTNjdEM3cndEV0VP
+    SlZZZFRZZE9mVHovU0tnWmpSMXpyZi94UU1UcXhXWlN3V21HamZMODgzTlhCVApn
+    MlhLVkJRQnFwTWtlcXhBR1ZTUGNCbkVOK2lyYWFqODU0U2NaenNyTktYQUJZVWx4
+    OU41YUZEUVIxblZ5aFpmCm53ck9QY0FUZ1ZxVnpKL0Fnd1graktNTGlUZjVKUWww
+    Tmc5Sm1Xd0RBb0dBVU9IWVdtbDhVS3RRZ2lEYldxU0sKYkJib3k0b2JIVng0VlFB
+    T0grTmhSOXNIMEQvS1QzdlFYN2F4OVFyOS91NTladW1TaThBMTlWWVFZemxRZ1I5
+    SQpHNnY2em9DMlVSTU9TL29yWTliK05rUklVeGdZYjdra3BZUzBRRXdTcjNSYjV2
+    cldaNWZWZ2F5cHF1eG16bnd2CmJTKzVBc2ljTWFXVkJWVXZJRk1PMGRFQ2dZQnhi
+    OU50UmRSRHAzczlwK2U5dEw5YzRBcGtuUHhmVk80Nlo5RzEKN1ZJZEN1WnI0anhl
+    UEYvWm84bytNb3k3RklBZk1uSFhZREpFOERNaUhyUzROdzZEL21aU2xhbHR4VUZN
+    NU1ZKwplRFlRVXEvck5DQUJybGJteEZQRnExblRCR0RoWWZvN2JuUzZucDA2OEtK
+    dXhLVnRkdnFTVnNNVnFlMi84YlQrCmJ1NnB3UUtCZ0VsenhxdUhTa29iMzMvYlZ1
+    M2ZCMGJoZkhXN1p6eFZiS09yL3FoSlVueUNhR3ovZkxiaHpnejkKNzlxZnhpUmhC
+    N0pNMG0vaE1UcTZuZEtqVE1aNmJQUjlrREQ2V08zcjRiUllKT2hSSjNvMmhmWURM
+    R0YzemlyNwpyMlNUZjNJbnZsK3BZVU1hbytDOFdNWDZZek5qeUlBTjNiMDI3enpT
+    MXo4MUduaVJLbzl3Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -20,50 +55,52 @@ metadata:
   name: sap-actions-controller-config
 data:
   sap-actions-controller.yaml: |
-    <your sap-actions-controller config>
+    sap-actions-controller.yaml
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sap-actions-controller-deploy
-  namespace: sap-actions-controller
-  labels:
-    app: sap-actions-controller
+  name: sap-actions-controller
 spec:
   selector:
     matchLabels:
       app: sap-actions-controller
+  replicas: 1
   template:
     metadata:
       labels:
         app: sap-actions-controller
     spec:
-      enableServiceLinks: False
+      volumes:
+        - name: sap-actions-controller-secret
+          secret:
+            secretName: sap-actions-controller-secret
       containers:
         - name: sap-actions-controller
-          image: gcr.io/sap-actions-controller:latest
-          imagePullPolicy: Always
+          image: golang:1.19.8-alpine3.17
+          workingDir: /app
+          volumeMounts:
+            - name: sap-actions-controller-secret
+              mountPath: /app/keys
+              readOnly: true
+            - name: sap-actions-controller-secret
+              mountPath: /app/config
+              readOnly: true
+          command: ["./actions-rollout-app"]
+          args: ["-c", "/app/sap-actions-controller.yaml"]
           env:
-            - name: BIND_ADDR
-              value: "0.0.0.0"
+            - name: GHES_APP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sap-actions-controller-secret
+                  key: GHES_APP_PRIVATE_KEY
+            - name: GHES_APP_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sap-actions-controller-secret
+                  key: GHES_APP_WEBHOOK_SECRET
           ports:
             - containerPort: 3000
-              protocol: TCP
-      restartPolicy: Always
-      volumeMounts:
-        - name: secrets
-          mountPath: /etc/sap-actions-controller/certs/
-          readOnly: true
-        - name: config
-          mountPath: /etc/sap-actions-controller
-          readOnly: true
-      volumes:
-        - name: secrets
-          secret:
-            secretName: sap-actions-controller
-        - name: config
-          configMap:
-            name: sap-actions-controller
 ---
 apiVersion: v1
 kind: Service
@@ -78,27 +115,3 @@ spec:
   ports:
     - port: 3000
       targetPort: 3000
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  name: sap-actions-controller
-  labels:
-    app: sap-actions-controller
-spec:
-  rules:
-    - host: bot.sap-actions-controller-pod.dev
-      http:
-        paths:
-          - backend:
-              serviceName: sap-actions-controller
-              servicePort: 3000
-  tls:
-    - hosts:
-        - bot.metal-pod.dev
-      secretName: sap-actions-controller-ingress-tls

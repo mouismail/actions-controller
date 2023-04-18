@@ -4,6 +4,7 @@ package git
 
 import (
 	"fmt"
+
 	"github.tools.sap/actions-rollout-app/utils"
 
 	"github.com/go-git/go-billy/v5/memfs"
@@ -12,8 +13,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/storage/memory"
 )
-
-var NoChangesError = fmt.Errorf("no changes")
 
 func PushToRemote(remoteURL, remoteBranch, targetURL, targetBranch, msg string) error {
 	r, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{

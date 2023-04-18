@@ -5,13 +5,9 @@ import "runtime"
 type version struct{}
 
 var (
-	// Version of the application
-	Version = "version not set, please build your app with appropriate ldflags"
-	// Revision of the application
-	Revision = ""
-	// GitSHA1 of the application
-	GitSHA1 = ""
-	// BuildDate of the application
+	Version   = "version not set, please build your app with appropriate ldflags"
+	Revision  = ""
+	GitSHA1   = ""
 	BuildDate = ""
 )
 

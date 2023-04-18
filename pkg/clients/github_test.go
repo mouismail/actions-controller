@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"context"
 	"github.tools.sap/actions-rollout-app/config"
 	"reflect"
 	"testing"
@@ -76,51 +75,6 @@ func TestGithub_GetV3Client(t *testing.T) {
 			}
 			if got := a.GetV3Client(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetV3Client() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGithub_GitToken(t *testing.T) {
-	type fields struct {
-		logger         *zap.SugaredLogger
-		keyPath        string
-		appID          int64
-		installationID int64
-		organizationID string
-		atr            *ghinstallation.AppsTransport
-		itr            *ghinstallation.Transport
-		serverInfo     *config.ServerInfo
-	}
-	type args struct {
-		ctx context.Context
-	}
-	var tests []struct {
-		name    string
-		fields  fields
-		args    args
-		want    string
-		wantErr bool
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := &Github{
-				logger:         tt.fields.logger,
-				keyPath:        tt.fields.keyPath,
-				appID:          tt.fields.appID,
-				installationID: tt.fields.installationID,
-				organizationID: tt.fields.organizationID,
-				atr:            tt.fields.atr,
-				itr:            tt.fields.itr,
-				serverInfo:     tt.fields.serverInfo,
-			}
-			got, err := a.GitToken(tt.args.ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GitToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GitToken() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
