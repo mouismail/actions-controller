@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/webhooks/v6 v6.1.0
 	github.com/google/go-github/v50 v50.2.0
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/oauth2 v0.8.0
