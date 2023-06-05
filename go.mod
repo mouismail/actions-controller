@@ -3,7 +3,7 @@ module github.tools.sap/actions-rollout-app
 go 1.19
 
 require (
-	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
+	github.com/bradleyfalzon/ghinstallation/v2 v2.4.0
 	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/go-playground/validator v9.31.0+incompatible
@@ -30,6 +30,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/go-github/v52 v52.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
