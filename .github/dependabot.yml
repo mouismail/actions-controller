@@ -9,7 +9,7 @@ registries:
       type: docker-registry
       url: registry.hub.docker.com
       username: mouismail
-      password: ${{secrets.DOCKERHUB_PASSWORD}}    
+      password: ${{secrets.DOCKERHUB_PASSWORD}}
 updates:
   - package-ecosystem: "gomod" # See documentation for possible values
     directory: "/" # Location of package manifests
