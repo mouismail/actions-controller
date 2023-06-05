@@ -15,3 +15,6 @@ updates:
       - "dependabot"
       - "gomod"
       - "dependencies"
+    ignore:
+    - dependency-name: "github.com/go-git/go-git/v5 "
+      versions: ["5.x"]
