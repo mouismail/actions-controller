@@ -13,7 +13,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/oauth2 v0.8.0
-	golang.org/x/sync v0.1.0
+	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
 )
