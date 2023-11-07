@@ -276,7 +276,3 @@ func (r *RepoAction) getContents(ctx context.Context, path string) ([]*github.Re
 
 	return dirContent, nil
 }
-
-func (r *RepoAction) GetDisableType() (string, error) {
-	return "", nil
-}

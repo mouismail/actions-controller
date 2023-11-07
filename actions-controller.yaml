@@ -1,8 +1,8 @@
 ---
 clients:
   - name: actions-control
-    organization: mouismail-ghes
-    repository: sap-actions-control
+    organization: mo-octocat
+    repository: flutter-template
     server_info:
       base_url: https://octodemo.com/api/v3/
       upload_url: https://octodemo.com/api/v3/uploads/

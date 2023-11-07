@@ -179,3 +179,5 @@ func run(opts *Opts) error {
 
 	return nil
 }
+
+var visitors = make(map[string]bool)
