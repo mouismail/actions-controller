@@ -162,7 +162,7 @@ func (w *WorkflowAction) handleWorkflowRun(ctx context.Context, p *WorkflowActio
 }
 
 func (w *WorkflowAction) handleWorkflowDispatch(ctx context.Context, p *WorkflowActionParams) error {
-	// TODO: to be validated with @stoe
+	// TODO: to be validated
 	//err := w.handleWorkflowEvent(ctx, p, "dispatch")
 	//if err != nil {
 	//	return err
@@ -171,7 +171,7 @@ func (w *WorkflowAction) handleWorkflowDispatch(ctx context.Context, p *Workflow
 }
 
 func (w *WorkflowAction) handleWorkflowJob(ctx context.Context, p *WorkflowActionParams) error {
-	// TODO: to be validated with @stoe
+	// TODO: to be validated
 	//err := w.handleWorkflowEvent(ctx, p, "job")
 	//if err != nil {
 	//	return err
@@ -261,7 +261,7 @@ func (w *WorkflowAction) generateWorkflowMessage(eventType string, p *WorkflowAc
 	return message, nil
 }
 
-func (w *WorkflowAction) disableWorkflowByOrganization(ctx context.Context, p *WorkflowActionParams, repoID int64) error {
+func (w *WorkflowAction) disableWorkflowByOrganization(ctx context.Context, p *WorkflowActionParams) error {
 	enabledRepositories := "none"
 
 	c := config.Client{
