@@ -19,7 +19,6 @@ webhooks:
         args:
           issue_assignees:
             - mouismail
-            - stoe
 #          issue_labels:
 #            - ${{ org_name }}
 #            - ${{ repo_name }}

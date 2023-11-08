@@ -1,3 +1,0 @@
-url: https://github.example.com/octo
-contactEmail: octodemo@example.com
-useCase: 'octodemo'

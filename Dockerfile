@@ -15,8 +15,8 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/actions-rollout-app /app
-COPY --from=builder /app/sap-actions-controller.yaml /app
-COPY --from=builder /app/keys /app/keys
+COPY --from=builder /app/actions-controller.yaml /app
+COPY --from=builder /app/. /app
 
 ARG GHES_APP_PRIVATE_KEY
 ARG GHES_APP_WEBHOOK_SECRET
@@ -25,4 +25,4 @@ ENV GHES_APP_PRIVATE_KEY=$GHES_APP_PRIVATE_KEY
 ENV GHES_APP_WEBHOOK_SECRET=$GHES_APP_WEBHOOK_SECRET
 
 EXPOSE 3000
-CMD ["/app/actions-rollout-app", "-c", "/app/sap-actions-controller.yaml"]
+CMD ["/app/actions-rollout-app", "-c", "/app/actions-controller.yaml"]

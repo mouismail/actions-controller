@@ -75,9 +75,6 @@ func (w *Webhook) Handle(response http.ResponseWriter, request *http.Request) {
 	case ghwebhooks.WorkflowJobPayload:
 		w.logger.Infow("received workflow job event")
 		go w.a.ProcessWorkflowJobEvent(&payload)
-	case ghwebhooks.IssuesPayload:
-		w.logger.Infow("received issues event")
-		go w.a.ProcessIssuesEvent(&payload)
 	default:
 		w.logger.Warnw("missing handler", "payload", payload)
 	}
