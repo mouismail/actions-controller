@@ -55,7 +55,7 @@ func checkAppInstallation(client *github.Client, owner, repo, appSlug string, li
 		log.Printf("Error fetching app installations: %v", err)
 		return
 	}
-
+// TODO: o(n'2) to be refactored to be o(log n) max
 	for _, installation := range installations {
 		if installation.AppSlug != nil && *installation.AppSlug == appSlug {
 			// Check if the app is installed on the specific repository
