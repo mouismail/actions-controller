@@ -48,60 +48,12 @@ func NewGithub(logger *zap.SugaredLogger, organizationID, repository string, sev
 		repository:     repository,
 		serverInfo:     severInfo,
 	}
-	err := a.initCloudClients()
-	//err := a.initClients()
-	if err != nil {
+	err := a.initClients()
+	if err != nil) {
 		return nil, err
 	}
 
 	return a, nil
-}
-
-func (a *Github) initCloudClients() error {
-	ctx := context.Background()
-	atr, err := ghinstallation.NewAppsTransportKeyFromFile(http.DefaultTransport, a.appID, a.keyPath)
-
-	if err != nil {
-		return fmt.Errorf(utils.ErrMissingClient, err)
-	}
-	cloudClient := v3.NewClient(&http.Client{Transport: atr})
-	installation, _, err := cloudClient.Apps.FindRepositoryInstallation(ctx, a.organizationID, a.repository)
-	if err != nil {
-		return fmt.Errorf(utils.ErrFindingOrgInstallations, err)
-	}
-	a.installationID = installation.GetID()
-	a.logger.Infow("found installation id", "installation-id", a.installationID)
-
-	installationToken, _, err := cloudClient.Apps.CreateInstallationToken(ctx, a.installationID, nil)
-	if err != nil {
-		return fmt.Errorf(utils.ErrCreatingInstallationToken, err)
-	}
-	a.installationToken = installationToken.GetToken()
-
-	itr := ghinstallation.NewFromAppsTransport(atr, a.installationID)
-	a.atr = atr
-	a.itr = itr
-
-	a.logger.Infow("successfully initialized github app client", "organization-id", a.organizationID, "installation-id", a.installationID, "expected-events", installation.Events)
-	return nil
-}
-
-func (a *Github) GetCloudV3Client() *v3.Client {
-	newClient := v3.NewClient(&http.Client{
-		Transport: &oauth2.Transport{
-			Base:   http.DefaultTransport,
-			Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: a.installationToken}),
-		},
-		CheckRedirect: nil,
-		Jar:           nil,
-		Timeout:       0,
-	})
-	return newClient
-}
-
-func (a *Github) GetCloudV3AppClient() *v3.Client {
-	client := v3.NewClient(&http.Client{Transport: a.atr})
-	return client
 }
 
 func (a *Github) initClients() error {
