@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Scheduled trigger as per Azure pipeline
+
+env:
+  build_pool: "JUP-DEERL-IPS-VS-HMI-RT-LBA-1"
+  linux_image: "captain.rtf.siemens.net:8443/rtng_unified/wincc-bullseye:11.0.58"
+
+jobs:
+  GenerateMatrix:
+    name: list agents to inspect
+    runs-on: ${{ env.build_pool }}
+    container:
+      image: ${{ env.linux_image }}
+      options: --endpoint=docker-registry
+    timeout-minutes: 5
+    steps:
+      - name: Calculate matrix to execute
+        run: |
+          set -euo pipefail
+          [[ -z "${AGENT_DIAGNOSTIC+x}" ]] || set -x # enable diagnostics for inline script
+          declare -a legs=()
+          for agent in $(AgentsToInspect); do
+              legs+=("'${agent}':{'agent':'${agent}'}")
+          done
+          echo "legs=${legs[*]}" >> $GITHUB_ENV
+
+  Inspect:
+    name: inspect
+    needs: GenerateMatrix
+    runs-on: ${{ env.build_pool }}
+    strategy:
+      matrix: ${{ fromJson(needs.GenerateMatrix.outputs.legs) }}
+      max-parallel: 999
+    container:
+      image: ${{ env.linux_image }}
+      options: --endpoint=docker-registry
+    timeout-minutes: 2
+    steps:
+      - name: verify Artifact Staging Directory is accessible
+        run: |
+          set -euo pipefail
+          warn() {
+              echo "::error::$*"
+              echo "::endgroup::"
+          }
+          die() {
+              warn "$@"
+              exit 1
+          }
+          date
+          set -x # always show details of execution.
+          [[ -d "$(Agent.WorkFolder)" ]] || warn "Cannot access the agent Workfolder!"
+          ls -la  "$(Agent.WorkFolder)" || warn "Cannot list content of the agent Workfolder!"
+          [[ -d "$(Build.ArtifactStagingDirectory)" ]] || warn "Cannot access the Artifact Staging Directory!"
+          ls -la "$(Build.ArtifactStagingDirectory)" || warn "Cannot list content of Artifact Staging Directory!"
+          touch "$(Build.ArtifactStagingDirectory)/$(agent).log" || die "Cannot create a log file in Artifact Staging Directory!"
+          ls -la "$(Build.ArtifactStagingDirectory)"
+        if: always()
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ArtifactStagingDirectory
+          path: ${{ env.Build.ArtifactStagingDirectory }}
