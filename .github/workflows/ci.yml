@@ -1,0 +1,15 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  call-reusable-workflow:
+    uses: ./.github/workflows/reusable-workflow.yml
+    with:
+      exclude-matrix: '{"os": "ubuntu-latest", "version": "18.04"}'

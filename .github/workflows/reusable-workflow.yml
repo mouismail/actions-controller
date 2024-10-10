@@ -1,0 +1,36 @@
+name: Reusable Workflow with Matrix Exclusions
+
+on:
+  workflow_call:
+    inputs:
+      exclude-matrix:
+        description: 'Matrix exclusions in JSON format'
+        required: false
+        type: string
+        default: '{}'
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            version: 18.04
+          - os: ubuntu-latest
+            version: 20.04
+          - os: windows-latest
+            version: 2016
+          - os: windows-latest
+            version: 2019
+          - os: macos-latest
+            version: 10.15
+          - os: macos-latest
+            version: 11
+        exclude: ${{ fromJSON(inputs.exclude-matrix) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Run a script
+        run: echo "Running on ${{ matrix.os }} version ${{ matrix.version }}"
