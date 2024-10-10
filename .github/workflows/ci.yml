@@ -12,4 +12,4 @@ jobs:
   call-reusable-workflow:
     uses: ./.github/workflows/reusable-workflow.yml
     with:
-      exclude-matrix: '{"os": "ubuntu-latest", "version": "18.04"}'
+      exclude-matrix: '[{"os": "ubuntu-latest", "version": "18.04"}]'  # Passing as a list
