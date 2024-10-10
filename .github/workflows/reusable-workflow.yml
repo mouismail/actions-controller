@@ -15,19 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            version: 18.04
-          - os: ubuntu-latest
-            version: 20.04
-          - os: windows-latest
-            version: 2016
-          - os: windows-latest
-            version: 2019
-          - os: macos-latest
-            version: 10.15
-          - os: macos-latest
-            version: 11
+        version: [18.04, 20.04, 2016, 2019, 10.15, 11]
         exclude: ${{ fromJSON(inputs.exclude-matrix) }}
     steps:
       - name: Check out repository
