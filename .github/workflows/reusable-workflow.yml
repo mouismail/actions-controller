@@ -14,7 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os_version:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        version: [18.04, 20.04, 2016, 2019, 10.15, 11]
+        include:
           - os: ubuntu-latest
             version: 18.04
           - os: ubuntu-latest
@@ -32,4 +34,4 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v2
       - name: Run a script
-        run: echo "Running on ${{ matrix.os_version.os }} version ${{ matrix.os_version.version }}"
+        run: echo "Running on ${{ matrix.os }} version ${{ matrix.version }}"
