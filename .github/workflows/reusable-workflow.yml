@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         version: [18.04, 20.04, 2016, 2019, 10.15, 11]
-        exclude: ${{ fromJSON(inputs.exclude-matrix) }}
+        exclude: ${{ fromJSON(inputs.exclude-matrix) }}  # Exclude now properly part of the matrix
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
